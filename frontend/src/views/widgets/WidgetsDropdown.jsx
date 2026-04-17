@@ -13,8 +13,15 @@ import {
 } from '@coreui/react'
 import { getStyle } from '@coreui/utils'
 import { CChartBar, CChartLine } from '@coreui/react-chartjs'
-import CIcon from '@coreui/icons-react'
-import { cilArrowBottom, cilArrowTop, cilOptions } from '@coreui/icons'
+import {
+  TrendUp,
+  TrendDown,
+  DotsThree,
+  Receipt,
+  Money,
+  ChartLineUp,
+  HandCoins
+} from '@phosphor-icons/react'
 import axiosClient from '../../api/axiosClient'
 
 const formatCurrency = (value) => {
@@ -87,15 +94,20 @@ const WidgetsDropdown = (props) => {
             <>
               {stats.orders.value} Đơn{' '}
               <span className="fs-6 fw-normal">
-                ({stats.orders.rate > 0 ? '+' : ''}{stats.orders.rate}% <CIcon icon={stats.orders.rate >= 0 ? cilArrowTop : cilArrowBottom} />)
+                ({stats.orders.rate > 0 ? '+' : ''}{stats.orders.rate}% {stats.orders.rate >= 0 ? <TrendUp weight="bold" /> : <TrendDown weight="bold" />})
               </span>
             </>
           }
-          title="Tổng Hoá Đơn"
+          title={
+            <div className="d-flex align-items-center pb-2">
+              <Receipt size={28} weight="duotone" className="me-2" style={{opacity: 0.9}} />
+              <span className="fs-6">Tổng Hoá Đơn</span>
+            </div>
+          }
           action={
             <CDropdown alignment="end">
               <CDropdownToggle color="transparent" caret={false} className="text-white p-0">
-                <CIcon icon={cilOptions} />
+                <DotsThree size={24} weight="bold" />
               </CDropdownToggle>
               <CDropdownMenu>
                 <CDropdownItem>Xem chi tiết</CDropdownItem>
@@ -175,15 +187,20 @@ const WidgetsDropdown = (props) => {
             <>
               {formatCurrency(stats.revenue.value)}{' '}
               <span className="fs-6 fw-normal">
-                ({stats.revenue.rate > 0 ? '+' : ''}{stats.revenue.rate}% <CIcon icon={stats.revenue.rate >= 0 ? cilArrowTop : cilArrowBottom} />)
+                ({stats.revenue.rate > 0 ? '+' : ''}{stats.revenue.rate}% {stats.revenue.rate >= 0 ? <TrendUp weight="bold" /> : <TrendDown weight="bold" />})
               </span>
             </>
           }
-          title="Tổng doanh thu"
+          title={
+            <div className="d-flex align-items-center pb-2">
+              <Money size={28} weight="duotone" className="me-2" style={{opacity: 0.9}} />
+              <span className="fs-6">Tổng doanh thu</span>
+            </div>
+          }
           action={
             <CDropdown alignment="end">
               <CDropdownToggle color="transparent" caret={false} className="text-white p-0">
-                <CIcon icon={cilOptions} />
+                <DotsThree size={24} weight="bold" />
               </CDropdownToggle>
               <CDropdownMenu>
                 <CDropdownItem>Xem chi tiết</CDropdownItem>
@@ -262,15 +279,20 @@ const WidgetsDropdown = (props) => {
             <>
               {formatCurrency(stats.profit.value)}{' '}
               <span className="fs-6 fw-normal">
-                ({stats.profit.rate > 0 ? '+' : ''}{stats.profit.rate}% <CIcon icon={stats.profit.rate >= 0 ? cilArrowTop : cilArrowBottom} />)
+                ({stats.profit.rate > 0 ? '+' : ''}{stats.profit.rate}% {stats.profit.rate >= 0 ? <TrendUp weight="bold" /> : <TrendDown weight="bold" />})
               </span>
             </>
           }
-          title="Tổng Lợi Nhuận"
+          title={
+            <div className="d-flex align-items-center pb-2">
+              <ChartLineUp size={28} weight="duotone" className="me-2 text-white" style={{opacity: 0.9}} />
+              <span className="fs-6 text-white">Tổng Lợi Nhuận</span>
+            </div>
+          }
           action={
             <CDropdown alignment="end">
               <CDropdownToggle color="transparent" caret={false} className="text-white p-0">
-                <CIcon icon={cilOptions} />
+                <DotsThree size={24} weight="bold" />
               </CDropdownToggle>
               <CDropdownMenu>
                 <CDropdownItem>Xem chi tiết</CDropdownItem>
@@ -332,15 +354,20 @@ const WidgetsDropdown = (props) => {
             <>
               {formatCurrency(stats.expense.value)}{' '}
               <span className="fs-6 fw-normal">
-                ({stats.expense.rate > 0 ? '+' : ''}{stats.expense.rate}% <CIcon icon={stats.expense.rate >= 0 ? cilArrowTop : cilArrowBottom} />)
+                ({stats.expense.rate > 0 ? '+' : ''}{stats.expense.rate}% {stats.expense.rate >= 0 ? <TrendUp weight="bold" /> : <TrendDown weight="bold" />})
               </span>
             </>
           }
-          title="Tổng Chi"
+          title={
+            <div className="d-flex align-items-center pb-2">
+              <HandCoins size={28} weight="duotone" className="me-2" style={{opacity: 0.9}} />
+              <span className="fs-6">Tổng Chi</span>
+            </div>
+          }
           action={
             <CDropdown alignment="end">
               <CDropdownToggle color="transparent" caret={false} className="text-white p-0">
-                <CIcon icon={cilOptions} />
+                <DotsThree size={24} weight="bold" />
               </CDropdownToggle>
               <CDropdownMenu>
                 <CDropdownItem>Xem chi tiết</CDropdownItem>

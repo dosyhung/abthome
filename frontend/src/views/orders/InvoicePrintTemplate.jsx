@@ -142,8 +142,8 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
       marginBottom: 2 * scale,
     },
     qrImage: {
-      width: 60 * scale,
-      height: 60 * scale,
+      width: 115 * scale,
+      height: 115 * scale,
       marginTop: 5 * scale,
     },
     titleWrapper: {
@@ -248,7 +248,13 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
 
   const finalShowDiscount = isDiscountEnabledInSettings || hasDynamicDiscount;
 
-  const qrUrl = `https://img.vietqr.io/image/techcombank-19035881724013-compact2.jpg?amount=${dynamicFinalAmount}&addInfo=${orderData.code}&accountName=CONG%20TY%20ABT`;
+  const bankId = (settings.print_bank_id_name || 'techcombank').trim();
+  const bankAccount = (settings.print_bank_account || '19035881724013').trim();
+  const bankOwner = (settings.print_bank_owner || 'CONG TY ABT').trim();
+
+  const finalPayableAmount = Math.max(0, oldDebt + dynamicFinalAmount - Number(orderData.paidAmount || 0));
+
+  const qrUrl = `https://img.vietqr.io/image/${bankId}-${bankAccount}-qr_only.png?amount=${finalPayableAmount}&addInfo=${orderData.code}&accountName=${encodeURIComponent(bankOwner)}`;
 
   // Thiết lập Column Width Cứng
   const colWidths = ['5%', '40%', '12%', '6%', '7%', '12%', '6%', '12%'];
@@ -275,7 +281,7 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
           <View style={styles.headerCenter}>
             <Text style={styles.companyName}>{companyName}</Text>
             <Text style={{ marginBottom: 2 * scale }}>{companyAddress}</Text>
-            <Text style={{ fontWeight: 'bold' }}>Quét mã QR trên đơn thanh toán hoặc TECHCOMBANK - 19035881724013 Cty chỉ chấp nhận thanh toán 1 số TK duy nhất</Text>
+            <Text style={{ fontWeight: 'bold' }}>Quét mã QR trên đơn thanh toán hoặc {bankId.toUpperCase()} - {bankAccount} (Chủ TK: {bankOwner}). Cty chỉ chấp nhận thanh toán 1 số TK duy nhất</Text>
           </View>
 
           <View style={styles.headerRight}>

@@ -39,6 +39,9 @@ const PrintSettings = () => {
     print_show_signatures: 'true',
     print_company_logo: '',
     system_sidebar_logo: '',
+    print_bank_id_name: 'techcombank',
+    print_bank_account: '19035881724013',
+    print_bank_owner: 'CONG TY ABT',
   })
 
   // Print Logo State
@@ -241,6 +244,38 @@ const PrintSettings = () => {
                   <CFormInput 
                     name="print_company_phone"
                     value={settings.print_company_phone || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <hr />
+                <h6 className="mb-3 fw-bold text-secondary">Cấu Hình Thanh Toán (Mã QR)</h6>
+
+                <div className="mb-3">
+                  <CFormLabel>Ngân Hàng (Mã viết tắt)</CFormLabel>
+                  <CFormInput 
+                    name="print_bank_id_name"
+                    value={settings.print_bank_id_name || ''}
+                    placeholder="VD: techcombank, mbbank, vcb, vietinbank..."
+                    onChange={handleInputChange}
+                  />
+                  <div className="text-secondary small mt-1">Viết liền không dấu, theo mã chuẩn của VietQR.</div>
+                </div>
+
+                <div className="mb-3">
+                  <CFormLabel>Số Tài Khoản</CFormLabel>
+                  <CFormInput 
+                    name="print_bank_account"
+                    value={settings.print_bank_account || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="mb-3">
+                  <CFormLabel>Tên Chủ Tài Khoản</CFormLabel>
+                  <CFormInput 
+                    name="print_bank_owner"
+                    value={settings.print_bank_owner || ''}
                     onChange={handleInputChange}
                   />
                 </div>
