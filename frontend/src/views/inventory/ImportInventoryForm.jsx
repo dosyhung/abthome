@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axiosClient from '../../api/axiosClient'
 import {
@@ -17,6 +17,10 @@ import {
   CTableBody,
   CTableDataCell,
   CButton,
+  CToaster,
+  CToast,
+  CToastHeader,
+  CToastBody
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilTrash, cilPlus, cilSave } from '@coreui/icons'
@@ -42,6 +46,18 @@ const ImportInventoryForm = () => {
   // --- STATE CHI TIẾT PHIẾU ---
   const [partnerId, setPartnerId] = useState('')
   const [note, setNote] = useState('')
+
+  // --- STATE TOAST ---
+  const toaster = useRef()
+  const [toast, addToast] = useState(0)
+
+  const showSuccessToast = (message) => (
+    <CToast color="success" className="text-white align-items-center">
+      <div className="d-flex">
+        <CToastBody>{message}</CToastBody>
+      </div>
+    </CToast>
+  )
 
   // --- STATE MẢNG MẶT HÀNG (Dynamic Field Array) ---
   const [items, setItems] = useState([
@@ -133,8 +149,13 @@ const ImportInventoryForm = () => {
       }
 
       const response = await axiosClient.post('/inventory/import', payload)
-      alert(`Tạo phiếu nhập thành công! Mã: ${response.data?.code || ''}`);
-      navigate('/inventory/list'); // Chuyển hướng theo yêu cầu
+      addToast(showSuccessToast(`Tạo phiếu nhập thành công! Mã: ${response.data?.code || ''}`));
+      
+      // Reset Form
+      setPartnerId('');
+      setNote('');
+      setItems([{ id: Date.now(), variantId: '', quantity: 1, unitPrice: 0, batchNumber: '', expiryDate: '' }]);
+      
     } catch (error) {
       console.error('Lưu phiếu thất bại:', error);
       alert('Có lỗi xảy ra khi tạo phiếu nhập!');
@@ -279,6 +300,8 @@ const ImportInventoryForm = () => {
           </CCardBody>
         </CCard>
       </CCol>
+
+      <CToaster ref={toaster} push={toast} placement="top-end" />
     </CRow>
   )
 }

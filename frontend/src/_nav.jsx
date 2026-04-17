@@ -28,6 +28,10 @@ import {
   cilUser,
   cilMoney,
   cilBank,
+  cilTags,
+  cilLayers,
+  cilHistory,
+  cilPlus,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
@@ -118,21 +122,25 @@ const _nav = [
         component: CNavItem,
         name: 'Quản lý Danh Mục',
         to: '/products/categories',
+        icon: <CIcon icon={cilTags} customClassName="nav-icon" />,
       },
       {
         component: CNavItem,
         name: 'Sản Phẩm',
         to: '/products/list',
+        icon: <CIcon icon={cilLayers} customClassName="nav-icon" />,
       },
       {
         component: CNavItem,
-        name: 'Danh sách Lịch sử Phiếu',
+        name: 'Danh sách Phiếu Nhập',
         to: '/inventory/list',
+        icon: <CIcon icon={cilHistory} customClassName="nav-icon" />,
       },
       {
         component: CNavItem,
         name: 'Tạo Phiếu Nhập',
         to: '/inventory/import',
+        icon: <CIcon icon={cilPlus} customClassName="nav-icon" />,
       },
     ],
   },
