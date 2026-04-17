@@ -117,6 +117,10 @@ const _nav = [
     ],
   },
   {
+    component: CNavTitle,
+    name: 'Quản Lý Kho',
+  },
+  {
     component: CNavGroup,
     name: 'Quản Lý Kho',
     icon: <CIcon icon={cilPuzzle} customClassName="nav-icon" />,
@@ -148,6 +152,10 @@ const _nav = [
     ],
   },
   {
+    component: CNavTitle,
+    name: 'Khách Hàng & Đối Tác',
+  },
+  {
     component: CNavGroup,
     name: 'Khách hàng & Đối tác',
     icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
@@ -168,6 +176,10 @@ const _nav = [
         to: '/partners/supplier-debt',
       },
     ],
+  },
+  {
+    component: CNavTitle,
+    name: 'Quản Lý Thu Chi',
   },
   {
     component: CNavGroup,
