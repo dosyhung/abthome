@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import axiosClient from '../../api/axiosClient'
 import {
   CRow,
   CCol,
@@ -19,21 +21,6 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilTrash, cilPlus, cilSave } from '@coreui/icons'
 
-// ===============================================
-// MOCK DATA (Thay thế bằng axios call thực tế sau)
-// ===============================================
-const mockSuppliers = [
-  { id: 1, name: 'Công ty TNHH Ván ép Bình Dương' },
-  { id: 2, name: 'Nhà phân phối keo PUR HMR' },
-  { id: 3, name: 'Xưởng cơ khí Phụ kiện Tủ bếp' }
-]
-
-const mockVariants = [
-  { id: 101, sku: 'MDF-X-15', name: 'Ván MDF cốt xanh 15mm', suggestedPrice: 200000 },
-  { id: 102, sku: 'MDF-X-17', name: 'Ván MDF cốt xanh 17mm', suggestedPrice: 220000 },
-  { id: 201, sku: 'PUR-TRANG-2KG', name: 'Keo PUR Trắng 2kg', suggestedPrice: 400000 },
-  { id: 301, sku: 'BL-GC-THANG', name: 'Bản lề giảm chấn Thẳng', suggestedPrice: 15000 },
-]
 
 // ===============================================
 // HÀM FORMAT TIỀN TỆ
@@ -46,6 +33,12 @@ const formatCurrency = (value) => {
 // MAIN COMPONENT
 // ===============================================
 const ImportInventoryForm = () => {
+  const navigate = useNavigate()
+
+  // --- STATE DỮ LIỆU TỪ SERVER ---
+  const [suppliers, setSuppliers] = useState([])
+  const [variants, setVariants] = useState([])
+
   // --- STATE CHI TIẾT PHIẾU ---
   const [partnerId, setPartnerId] = useState('')
   const [note, setNote] = useState('')
@@ -54,6 +47,23 @@ const ImportInventoryForm = () => {
   const [items, setItems] = useState([
     { id: Date.now(), variantId: '', quantity: 1, unitPrice: 0, batchNumber: '', expiryDate: '' }
   ])
+
+  // Fetch master data on component mount
+  useEffect(() => {
+    const fetchMasterData = async () => {
+      try {
+        const [supRes, varRes] = await Promise.all([
+          axiosClient.get('/partners?type=SUPPLIER'),
+          axiosClient.get('/products/all-variants')
+        ])
+        setSuppliers(supRes)
+        setVariants(varRes)
+      } catch (error) {
+        console.error('Error fetching master data', error)
+      }
+    }
+    fetchMasterData()
+  }, [])
 
   // --- LOGIC QUẢN LÝ DÒNG MẶT HÀNG ---
   const handleAddItem = () => {
@@ -75,9 +85,9 @@ const ImportInventoryForm = () => {
         
         // Auto điền Giá nhập gợi ý khi chọn Mặt hàng (nếu chưa nhập giá trị thủ công)
         if (field === 'variantId') {
-           const selectedVariant = mockVariants.find(v => v.id.toString() === value)
+           const selectedVariant = variants.find(v => v.id.toString() === value)
            if (selectedVariant) {
-             updatedItem.unitPrice = selectedVariant.suggestedPrice
+             updatedItem.unitPrice = selectedVariant.importPrice || 0
            } else {
              updatedItem.unitPrice = 0
            }
@@ -97,7 +107,7 @@ const ImportInventoryForm = () => {
   }, [items])
 
   // --- SUBMIT ---
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!partnerId) {
       alert('Vui lòng chọn Nhà cung cấp!');
       return;
@@ -108,22 +118,27 @@ const ImportInventoryForm = () => {
       return;
     }
 
-    // Payload sẵn sàng gửi lên Backend qua ORM Prisma
-    const payload = {
-      type: 'IMPORT', // Enum TransactionType.IMPORT
-      partnerId: parseInt(partnerId),
-      note: note,
-      details: items.map(i => ({
-        variantId: parseInt(i.variantId),
-        quantity: parseInt(i.quantity),
-        unitPrice: parseFloat(i.unitPrice),
-        batchNumber: i.batchNumber || null,
-        expiryDate: i.expiryDate ? new Date(i.expiryDate).toISOString() : null,
-      }))
-    }
+    try {
+      // Payload sẵn sàng gửi lên Backend
+      const payload = {
+        partnerId: parseInt(partnerId),
+        note: note,
+        details: items.map(i => ({
+          variantId: parseInt(i.variantId),
+          quantity: parseInt(i.quantity),
+          unitPrice: parseFloat(i.unitPrice),
+          batchNumber: i.batchNumber || null,
+          expiryDate: i.expiryDate ? new Date(i.expiryDate).toISOString() : null,
+        }))
+      }
 
-    console.log("Dữ liệu gửi lên API: ", payload)
-    alert(`Tạo phiếu nhập thành công! Tổng tiền: ${formatCurrency(totalAmount)}\n(Xem console payload)`)
+      const response = await axiosClient.post('/inventory/import', payload)
+      alert(`Tạo phiếu nhập thành công! Mã: ${response.data?.code || ''}`);
+      navigate('/inventory/list'); // Chuyển hướng theo yêu cầu
+    } catch (error) {
+      console.error('Lưu phiếu thất bại:', error);
+      alert('Có lỗi xảy ra khi tạo phiếu nhập!');
+    }
   }
 
   return (
@@ -142,7 +157,7 @@ const ImportInventoryForm = () => {
                 onChange={(e) => setPartnerId(e.target.value)}
               >
                 <option value="">-- Chọn Nhà cung cấp --</option>
-                {mockSuppliers.map(sup => (
+                {suppliers.map(sup => (
                   <option key={sup.id} value={sup.id}>{sup.name}</option>
                 ))}
               </CFormSelect>
@@ -193,7 +208,7 @@ const ImportInventoryForm = () => {
                           onChange={(e) => handleItemChange(item.id, 'variantId', e.target.value)}
                         >
                           <option value="">-- Chọn mặt hàng --</option>
-                          {mockVariants.map(v => (
+                          {variants.map(v => (
                             <option key={v.id} value={v.id}>{v.sku} - {v.name}</option>
                           ))}
                         </CFormSelect>

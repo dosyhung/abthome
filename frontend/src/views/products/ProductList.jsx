@@ -17,52 +17,7 @@ import {
 // Ở đây tôi dùng text thay thế nếu dự án chưa import đúng icon, hoặc giữ CIcon nếu đã cài
 import CIcon from '@coreui/icons-react'
 import { cilPlus, cilChevronBottom, cilChevronRight } from '@coreui/icons'
-
-// ===============================================
-// MOCK API FUNCTONS (Simulate axios request)
-// ===============================================
-const mockFetchProducts = () => {
-  const mockData = [
-    {
-      id: 1,
-      code: 'SP-MDF',
-      name: 'Ván MDF cốt xanh',
-      category: { id: 1, name: 'Ván gỗ công nghiệp' },
-      variants: [
-        { id: 101, sku: 'MDF-X-15', attributes: { thickness: '15mm', size: '1220x2440' }, importPrice: 250000, sellPrice: 300000, stockCount: 150 },
-        { id: 102, sku: 'MDF-X-17', attributes: { thickness: '17mm', size: '1220x2440' }, importPrice: 280000, sellPrice: 340000, stockCount: 80 },
-      ],
-    },
-    {
-      id: 2,
-      code: 'SP-KEO-PUR',
-      name: 'Keo dán cạnh PUR',
-      category: { id: 2, name: 'Phụ liệu sản xuất' },
-      variants: [
-        { id: 201, sku: 'PUR-TRANG-2KG', attributes: { color: 'Trắng', weight: '2kg' }, importPrice: 400000, sellPrice: 500000, stockCount: 20 },
-        { id: 202, sku: 'PUR-TRONG-2KG', attributes: { color: 'Trong suốt', weight: '2kg' }, importPrice: 450000, sellPrice: 550000, stockCount: 15 },
-      ],
-    },
-    {
-      id: 3,
-      code: 'SP-BL-GC',
-      name: 'Bản lề giảm chấn',
-      category: { id: 3, name: 'Phụ kiện tủ' },
-      variants: [
-        { id: 301, sku: 'BL-GC-THANG', attributes: { type: 'Thẳng', material: 'Inox 304' }, importPrice: 15000, sellPrice: 25000, stockCount: 500 },
-        { id: 302, sku: 'BL-GC-CONG-IT', attributes: { type: 'Cong ít', material: 'Inox 304' }, importPrice: 16000, sellPrice: 26000, stockCount: 300 },
-        { id: 303, sku: 'BL-GC-CONG-NHIEU', attributes: { type: 'Cong nhiều', material: 'Inox 304' }, importPrice: 17000, sellPrice: 27000, stockCount: 250 },
-      ],
-    },
-  ];
-
-  return new Promise((resolve) => {
-    // Giả lập độ trễ network 500ms
-    setTimeout(() => {
-      resolve({ data: mockData })
-    }, 500)
-  })
-}
+import axiosClient from '../../api/axiosClient'
 
 // ===============================================
 // MAIN COMPONENT
@@ -80,8 +35,8 @@ const ProductList = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const response = await mockFetchProducts()
-      setProducts(response.data)
+      const data = await axiosClient.get('/products')
+      setProducts(data)
     } catch (error) {
       console.error('Error fetching products:', error)
     } finally {
@@ -186,7 +141,7 @@ const ProductList = () => {
                                       <CTableDataCell><strong>{v.sku}</strong></CTableDataCell>
                                       <CTableDataCell>
                                         {/* Render thuộc tính từ JSON */}
-                                        {Object.entries(v.attributes).map(([key, val]) => (
+                                        {v.attributes && Object.entries(v.attributes).map(([key, val]) => (
                                           <CBadge key={key} color="secondary" className="me-1">
                                             {key}: {val}
                                           </CBadge>

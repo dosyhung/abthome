@@ -75,7 +75,9 @@ const Widgets = React.lazy(() => import('./views/widgets/Widgets'))
 
 // Products & Inventory
 const ProductList = React.lazy(() => import('./views/products/ProductList'))
+const CategoryList = React.lazy(() => import('./views/products/CategoryList'))
 const ImportInventoryForm = React.lazy(() => import('./views/inventory/ImportInventoryForm'))
+const InventoryList = React.lazy(() => import('./views/inventory/InventoryList'))
 
 // Orders
 const OrderList = React.lazy(() => import('./views/orders/OrderList'))
@@ -85,6 +87,7 @@ const OrderDetail = React.lazy(() => import('./views/orders/OrderDetail'))
 // Partners
 const CustomerDebt = React.lazy(() => import('./views/partners/CustomerDebt'))
 const SupplierDebt = React.lazy(() => import('./views/partners/SupplierDebt'))
+const SupplierList = React.lazy(() => import('./views/partners/SupplierList'))
 
 // Finance
 const Cashbook = React.lazy(() => import('./views/cashbook/Cashbook'))
@@ -156,9 +159,11 @@ export const routes = [
   { path: '/notifications/modals', name: 'Modals', element: Modals },
   { path: '/notifications/toasts', name: 'Toasts', element: Toasts },
   { path: '/widgets', name: 'Widgets', element: Widgets },
-  { path: '/products', name: 'Sản phẩm & Tồn kho', exact: true },
-  { path: '/products/list', name: 'Danh mục Sản phẩm', element: ProductList },
+  { path: '/products', name: 'Sản phẩm', exact: true },
+  { path: '/products/list', name: 'Danh mục vật tư/SP', element: ProductList },
+  { path: '/products/categories', name: 'Quản lý Danh Mục', element: CategoryList },
   { path: '/inventory', name: 'Giao dịch Kho', exact: true },
+  { path: '/inventory/list', name: 'Danh sách Phiếu', element: InventoryList },
   { path: '/inventory/import', name: 'Nhập kho', element: ImportInventoryForm },
   { path: '/orders', name: 'Bán hàng', exact: true },
   { path: '/orders/list', name: 'Quản lý Đơn hàng', element: OrderList },
@@ -166,6 +171,7 @@ export const routes = [
   { path: '/orders/detail', name: 'Chi tiết Đơn hàng', element: OrderDetail },
   { path: '/orders/detail/:id', name: 'Chi tiết ID', element: OrderDetail },
   { path: '/partners', name: 'Đối tác', exact: true },
+  { path: '/partners/suppliers', name: 'Nhà cung cấp', element: SupplierList },
   { path: '/partners/debt', name: 'Thu Nợ Khách hàng', element: CustomerDebt },
   { path: '/partners/supplier-debt', name: 'Chi Nợ Nhà Cung Cấp', element: SupplierDebt },
   { path: '/cashbook', name: 'Sổ Quỹ', element: Cashbook },

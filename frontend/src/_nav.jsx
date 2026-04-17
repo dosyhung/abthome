@@ -80,7 +80,7 @@ import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 const _nav = [
   {
     component: CNavItem,
-    name: 'Dashboard',
+    name: 'Trang Chủ',
     to: '/dashboard',
     icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
     badge: {
@@ -90,11 +90,11 @@ const _nav = [
   },
   {
     component: CNavTitle,
-    name: 'Mô-đun ERP',
+    name: 'Quản Lý Bán Hàng',
   },
   {
     component: CNavGroup,
-    name: 'Bán Hàng',
+    name: 'Quản Lý Bán Hàng',
     icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
     items: [
       {
@@ -111,13 +111,23 @@ const _nav = [
   },
   {
     component: CNavGroup,
-    name: 'Kho & Sản phẩm',
+    name: 'Quản Lý Kho & Sản phẩm',
     icon: <CIcon icon={cilPuzzle} customClassName="nav-icon" />,
     items: [
       {
         component: CNavItem,
-        name: 'Danh mục Vật tư/SP',
+        name: 'Quản lý Danh Mục',
+        to: '/products/categories',
+      },
+      {
+        component: CNavItem,
+        name: 'Sản Phẩm',
         to: '/products/list',
+      },
+      {
+        component: CNavItem,
+        name: 'Danh sách Lịch sử Phiếu',
+        to: '/inventory/list',
       },
       {
         component: CNavItem,
@@ -131,6 +141,11 @@ const _nav = [
     name: 'Khách hàng & Đối tác',
     icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
     items: [
+      {
+        component: CNavItem,
+        name: 'Danh sách Nhà Cung Cấp',
+        to: '/partners/suppliers',
+      },
       {
         component: CNavItem,
         name: 'Thu nợ Khách Hàng',

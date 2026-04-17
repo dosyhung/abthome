@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import useIdleTimeout from '../hooks/useIdleTimeout';
 
 const AuthContext = createContext();
 
@@ -38,6 +39,17 @@ export const AuthProvider = ({ children }) => {
     setUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
   };
+
+  const handleAutoLogout = useCallback(() => {
+    if (token) {
+        // Có thể hiển thị thông báo nếu muốn
+        console.log("Auto-logout do người dùng không hoạt động trong 5 phút.");
+        logout();
+    }
+  }, [token]);
+
+  // Cấu hình thời gian idle là 5 phút (300,000 milliseconds)
+  useIdleTimeout(handleAutoLogout, 5 * 60 * 1000);
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, logout, updateUserSession }}>

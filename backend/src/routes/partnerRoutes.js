@@ -5,5 +5,7 @@ const { verifyToken } = require('../middlewares/authMiddleware');
 
 router.use(verifyToken);
 router.get('/', partnerController.getPartners);
+router.post('/', partnerController.createPartner);
+router.put('/:id', partnerController.updatePartner);
 
 module.exports = router;

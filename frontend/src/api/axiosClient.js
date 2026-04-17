@@ -36,4 +36,12 @@ axiosClient.interceptors.response.use(
     }
 );
 
+// Helper: Xử lý đường dẫn ảnh từ backend (Nếu là link từ server thì nối thêm Hostname Backend)
+export const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('blob:')) return path;
+    const backendHost = 'http://localhost:5000';
+    return `${backendHost}${path}`;
+};
+
 export default axiosClient;

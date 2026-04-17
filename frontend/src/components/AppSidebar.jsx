@@ -19,9 +19,10 @@
  * )
  */
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useAuth } from 'src/contexts/AuthContext'
+import axiosClient, { getImageUrl } from 'src/api/axiosClient'
 
 import {
   CCloseButton,
@@ -57,16 +58,33 @@ const AppSidebar = () => {
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.sidebarShow)
-  
+
   const { user } = useAuth()
-  
+  const [sidebarLogo, setSidebarLogo] = useState(null)
+
+  useEffect(() => {
+    let isMounted = true
+    const fetchSidebarLogo = async () => {
+      try {
+        const res = await axiosClient.get('/settings')
+        if (isMounted && res && res.system_sidebar_logo) {
+          setSidebarLogo(res.system_sidebar_logo)
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchSidebarLogo()
+    return () => { isMounted = false }
+  }, [])
+
   // Lọc Menu: Ẩn phần Cấu Hình nếu không phải Admin
   let filteredNavigation = navigation
   if (user) {
     const permissions = user.role?.permissions || []
     let parsedPerms = []
     if (typeof permissions === 'string') {
-      try { parsedPerms = JSON.parse(permissions) } catch(e){}
+      try { parsedPerms = JSON.parse(permissions) } catch (e) { }
     } else if (Array.isArray(permissions)) {
       parsedPerms = permissions
     }
@@ -90,8 +108,14 @@ const AppSidebar = () => {
     >
       <CSidebarHeader className="border-bottom">
         <CSidebarBrand to="/">
-          <CIcon customClassName="sidebar-brand-full" icon={logo} height={32} />
-          <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} />
+          {sidebarLogo ? (
+            <img src={getImageUrl(sidebarLogo)} alt="System Logo" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'cover' }} />
+          ) : (
+            <>
+              <CIcon customClassName="sidebar-brand-full" icon={logo} height={32} />
+              <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} />
+            </>
+          )}
         </CSidebarBrand>
         <CCloseButton
           className="d-lg-none"

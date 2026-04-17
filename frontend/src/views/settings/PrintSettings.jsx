@@ -16,7 +16,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilSave, cilCloudUpload, cilLockLocked } from '@coreui/icons'
 import InvoicePrintTemplate from '../orders/InvoicePrintTemplate'
-import axiosClient from '../../api/axiosClient'
+import axiosClient, { getImageUrl } from '../../api/axiosClient'
 import { useAuth } from '../../contexts/AuthContext'
 
 const PrintSettings = () => {
@@ -36,14 +36,20 @@ const PrintSettings = () => {
     print_company_phone: '0123.456.789 - MST: 0312345678',
     print_invoice_title: 'PHIẾU XUẤT KHO KIÊM BÁN HÀNG',
     print_paper_size: 'a4',
-    print_show_discount: 'true',
     print_show_signatures: 'true',
     print_company_logo: '',
+    system_sidebar_logo: '',
   })
 
+  // Print Logo State
   const [logoFile, setLogoFile] = useState(null)
-  const [isSaving, setIsSaving] = useState(false)
   const [oldLogoUrl, setOldLogoUrl] = useState('')
+
+  // Sidebar Logo State
+  const [sidebarLogoFile, setSidebarLogoFile] = useState(null)
+  const [oldSidebarLogoUrl, setOldSidebarLogoUrl] = useState('')
+
+  const [isSaving, setIsSaving] = useState(false)
 
   // Fetch dữ liệu từ DB khi vừa vào trang
   useEffect(() => {
@@ -62,6 +68,9 @@ const PrintSettings = () => {
         if (res.print_company_logo) {
           setOldLogoUrl(res.print_company_logo)
         }
+        if (res.system_sidebar_logo) {
+          setOldSidebarLogoUrl(res.system_sidebar_logo)
+        }
       }
     } catch (error) {
       console.error('Failed to load settings:', error)
@@ -77,14 +86,17 @@ const PrintSettings = () => {
     }))
   }
 
-  // Chọn ảnh local
-  const handleFileChange = (e) => {
+  const handleFileChange = (e, target) => {
     const file = e.target.files[0]
     if (file) {
-      setLogoFile(file)
-      // Preview ảnh tức thời bằng Blob URL
       const objectUrl = URL.createObjectURL(file)
-      setSettings(prev => ({ ...prev, print_company_logo: objectUrl }))
+      if (target === 'print') {
+        setLogoFile(file)
+        setSettings(prev => ({ ...prev, print_company_logo: objectUrl }))
+      } else if (target === 'sidebar') {
+        setSidebarLogoFile(file)
+        setSettings(prev => ({ ...prev, system_sidebar_logo: objectUrl }))
+      }
     }
   }
 
@@ -111,7 +123,24 @@ const PrintSettings = () => {
         }
       }
 
-      // 2. Lưu config xuống DB
+      // 2. Upload Logo Sidebar (nếu có chọn)
+      if (sidebarLogoFile) {
+        const formDataSide = new FormData()
+        formDataSide.append('logo', sidebarLogoFile)
+        if (oldSidebarLogoUrl && !oldSidebarLogoUrl.startsWith('blob:')) {
+          formDataSide.append('old_url', oldSidebarLogoUrl)
+        }
+
+        const uploadSideRes = await axiosClient.post('/upload/logo', formDataSide)
+
+        if (uploadSideRes && uploadSideRes.url) {
+          finalSettings.system_sidebar_logo = uploadSideRes.url
+          setSettings(prev => ({ ...prev, system_sidebar_logo: uploadSideRes.url }))
+          setOldSidebarLogoUrl(uploadSideRes.url)
+        }
+      }
+
+      // 3. Lưu toàn bộ config xuống DB
       await axiosClient.put('/settings', finalSettings)
       alert("Lưu cấu hình in ấn thành công!")
     } catch (error) {
@@ -160,10 +189,24 @@ const PrintSettings = () => {
             </CCardHeader>
             <CCardBody>
               <CForm>
+                <div className="mb-4 bg-dark text-white p-3 rounded">
+                  <CFormLabel className="fw-bold">Logo Sidebar Hệ thống</CFormLabel>
+                  <CFormInput type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'sidebar')} />
+                  <div className="text-secondary small mt-1">Dùng để hiển thị lên góc trái thanh Sidebar. (Khuyên dùng: Ảnh trong suốt chữ màu Trắng/Sáng). Cần <a href="/" className="text-info">Tải lại trang</a> để xem thay đổi.</div>
+                  {settings.system_sidebar_logo && (
+                    <div className="mt-2 text-center p-2 rounded" style={{ background: '#3c4b64', width: 'fit-content' }}>
+                       <img src={getImageUrl(settings.system_sidebar_logo)} alt="Preview Sidebar Logo" style={{ maxHeight: '40px' }} />
+                    </div>
+                  )}
+                </div>
+
+                <hr/>
+                <h6 className="mb-3 fw-bold text-secondary">Cấu Hình Mẫu Giấy In</h6>
+
                 <div className="mb-3">
-                  <CFormLabel><strong>Logo Công Ty</strong></CFormLabel>
-                  <CFormInput type="file" accept="image/*" onChange={handleFileChange} />
-                  <div className="text-muted small mt-1">Hỗ trợ JPG, PNG (Khuyến nghị nền trong suốt)</div>
+                  <CFormLabel><strong>Logo Cửa Hàng (In lên Giấy)</strong></CFormLabel>
+                  <CFormInput type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'print')} />
+                  <div className="text-muted small mt-1">Hỗ trợ JPG, PNG (Khuyên dùng: Ảnh chữ Đen/Đỏ dành cho nền trắng)</div>
                 </div>
 
                 <div className="mb-3">

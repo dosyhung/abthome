@@ -9,6 +9,8 @@ const orderRoutes = require('./routes/orderRoutes');
 const settingRoutes = require('./routes/settingRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 const path = require('path');
 
 const app = express();
@@ -32,6 +34,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
