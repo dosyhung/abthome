@@ -32,6 +32,7 @@ import {
   cilLayers,
   cilHistory,
   cilPlus,
+  cilList,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
@@ -104,18 +105,20 @@ const _nav = [
       {
         component: CNavItem,
         name: 'Đơn hàng bán',
+        icon: <CIcon icon={cilList} customClassName="nav-icon" />,
         to: '/orders/list',
       },
       {
         component: CNavItem,
-        name: 'Tạo đơn mới (POS)',
+        name: 'Tạo đơn mới',
+        icon: <CIcon icon={cilPlus} customClassName="nav-icon" />,
         to: '/orders/create',
       },
     ],
   },
   {
     component: CNavGroup,
-    name: 'Quản Lý Kho & Sản phẩm',
+    name: 'Quản Lý Kho',
     icon: <CIcon icon={cilPuzzle} customClassName="nav-icon" />,
     items: [
       {
@@ -126,7 +129,7 @@ const _nav = [
       },
       {
         component: CNavItem,
-        name: 'Sản Phẩm',
+        name: 'Quản Lý Sản Phẩm',
         to: '/products/list',
         icon: <CIcon icon={cilLayers} customClassName="nav-icon" />,
       },

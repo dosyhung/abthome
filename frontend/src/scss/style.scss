@@ -1,8 +1,18 @@
 @use "@coreui/coreui/scss/coreui" as * with ( 
   $enable-deprecation-messages: false,
+  $enable-rounded: false
 );
 @use "@coreui/chartjs/scss/coreui-chartjs";
 @use "vendors/simplebar";
+
+:root {
+  --cui-border-radius: 0 !important;
+  --cui-border-radius-sm: 0 !important;
+  --cui-border-radius-lg: 0 !important;
+  --cui-border-radius-xl: 0 !important;
+  --cui-border-radius-2xl: 0 !important;
+  --cui-border-radius-pill: 0 !important;
+}
 
 body {
   background-color: var(--cui-tertiary-bg);

@@ -5,13 +5,12 @@ const productController = {
   getVariantsForSale: async (req, res) => {
     try {
       const variants = await prisma.productVariant.findMany({
-        where: {
-          stockCount: {
-            gt: 0 // POS chỉ lấy những món còn hàng tồn
-          }
-        },
         include: {
-          product: true // Gắn kèm thông tin Món chính (Name)
+          product: true, // Gắn kèm thông tin Món chính (Name)
+          batches: {
+            where: { currentQty: { gt: 0 } },
+            orderBy: { expiryDate: 'asc' } // Ưu tiên xuất lô cận date hoặc nhập trước
+          }
         }
       });
       res.status(200).json(variants);

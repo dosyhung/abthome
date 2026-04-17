@@ -11,6 +11,15 @@ import {
   CTableDataCell,
   CButton,
   CBadge,
+  CToaster,
+  CToast,
+  CToastHeader,
+  CToastBody,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilPlus, cilPrint, cilTrash, cilList } from '@coreui/icons'
@@ -33,6 +42,8 @@ const formatDate = (dateString) => {
 
 const getOrderStatusBadge = (status) => {
   const statusMap = {
+    PENDING: { color: 'warning', text: 'Chờ duyệt' },
+    COMPLETED: { color: 'success', text: 'Hoàn thành' },
     PROCESSING: { color: 'warning', text: 'Đang xử lý' },
     SHIPPED: { color: 'info', text: 'Đã gửi đi' },
     DELIVERED: { color: 'success', text: 'Hoàn thành' },
@@ -58,6 +69,10 @@ const getShippingStatusBadge = (shipping) => {
 const OrderList = () => {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [toast, addToast] = useState(0)
+  const toaster = useRef()
+  const [showApproveModal, setShowApproveModal] = useState(false)
+  const [selectedOrderToApprove, setSelectedOrderToApprove] = useState(null)
 
   // -- LOGIC IN ẤN --
   const [printData, setPrintData] = useState(null)
@@ -113,7 +128,28 @@ const OrderList = () => {
     }
   }
 
+  const handleApproveOrder = async () => {
+    if (!selectedOrderToApprove) return;
+    try {
+      await axiosClient.patch(`/orders/${selectedOrderToApprove.id}/approve`)
+      addToast(
+        <CToast color="success" className="text-white align-items-center">
+          <CToastHeader closeButton>
+            <strong className="me-auto">Thành công</strong>
+          </CToastHeader>
+          <CToastBody>Duyệt đơn và xuất kho thành công!</CToastBody>
+        </CToast>
+      )
+      setShowApproveModal(false)
+      fetchOrders() // Tải lại danh sách
+    } catch (err) {
+      console.error(err)
+      alert(err.response?.data?.message || 'Lỗi khi duyệt đơn')
+    }
+  }
+
   return (
+    <>
     <CCard className="mb-4">
       <CCardHeader className="d-flex justify-content-between align-items-center">
         <strong>Quản lý đơn hàng bán</strong>
@@ -157,9 +193,22 @@ const OrderList = () => {
                         {formatCurrency(order.finalAmount)}
                       </CTableDataCell>
                       <CTableDataCell className="text-center">
-                        <CBadge color={orderBadge.color} shape="rounded-pill" className="px-3 py-2">
-                          {orderBadge.text}
-                        </CBadge>
+                        {order.status === 'PENDING' ? (
+                          <CBadge 
+                            color={orderBadge.color} 
+                            shape="rounded-pill" 
+                            className="px-3 py-2"
+                            style={{ cursor: 'pointer' }}
+                            title="Click để duyệt đơn"
+                            onClick={() => { setSelectedOrderToApprove(order); setShowApproveModal(true); }}
+                          >
+                            {orderBadge.text}
+                          </CBadge>
+                        ) : (
+                          <CBadge color={orderBadge.color} shape="rounded-pill" className="px-3 py-2">
+                            {orderBadge.text}
+                          </CBadge>
+                        )}
                       </CTableDataCell>
                       <CTableDataCell className="text-center">
                         <CBadge color={shippingBadge.color} className="px-2 py-1">
@@ -180,7 +229,7 @@ const OrderList = () => {
                         >
                           <CIcon icon={cilPrint} />
                         </CButton>
-                        <CButton color="danger" variant="ghost" size="sm" title="Hủy Đơn" disabled={order.status === 'DELIVERED' || order.status === 'CANCELLED'}>
+                        <CButton color="danger" variant="ghost" size="sm" title="Hủy Đơn" disabled={order.status === 'DELIVERED' || order.status === 'COMPLETED' || order.status === 'CANCELLED'}>
                           <CIcon icon={cilTrash} />
                         </CButton>
                       </CTableDataCell>
@@ -205,6 +254,27 @@ const OrderList = () => {
       </div>
 
     </CCard>
+      
+      <CToaster ref={toaster} push={toast} placement="top-end" />
+
+      {/* Modal Duyệt Đơn */}
+      <CModal visible={showApproveModal} onClose={() => setShowApproveModal(false)} alignment="center">
+        <CModalHeader>
+          <CModalTitle>Xác nhận duyệt đơn hàng</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          Bạn có chắc chắn muốn duyệt lệnh trừ kho cho đơn hàng số <strong className="text-primary">{selectedOrderToApprove?.code}</strong> không?
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => setShowApproveModal(false)}>
+            Hủy
+          </CButton>
+          <CButton color="success" className="text-white" onClick={handleApproveOrder}>
+            Xác nhận
+          </CButton>
+        </CModalFooter>
+      </CModal>
+    </>
   )
 }
 

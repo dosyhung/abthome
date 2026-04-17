@@ -92,7 +92,7 @@ const orderController = {
 
       // Sinh mã Code tự động: ORD + Time
       const orderCode = 'ORD' + Date.now().toString().slice(-6);
-      let orderStatus = amountToPay >= finalAmount ? 'DELIVERED' : 'PROCESSING'; // Bán POS thường coi là Giao Xong
+      let orderStatus = 'PENDING'; // Khởi tạo chờ duyệt
 
       // Bắt đầu PRISMA TRANSACTION
       const result = await prisma.$transaction(async (tx) => {
@@ -111,6 +111,7 @@ const orderController = {
             items: {
               create: items.map(i => ({
                 variantId: Number(i.variantId),
+                batchId: i.batchId ? Number(i.batchId) : null,
                 quantity: Number(i.quantity),
                 price: Number(i.price)
               }))
@@ -129,17 +130,7 @@ const orderController = {
           }
         });
 
-        // 2. Trừ tồn kho
-        for (const item of items) {
-          await tx.productVariant.update({
-            where: { id: Number(item.variantId) },
-            data: {
-              stockCount: {
-                decrement: Number(item.quantity)
-              }
-            }
-          });
-        }
+
 
         // 3. Ghi nợ nếu thu thiếu tiền
         if (debtDifference > 0) {
@@ -186,6 +177,71 @@ const orderController = {
     } catch (error) {
       console.error("Lỗi khi tạo đơn POS:", error);
       res.status(500).json({ message: 'Lỗi server bảo mật khi giao dịch chốt đơn', error: error.message });
+    }
+  },
+
+  // API Duyệt Đơn Hàng (Xả tồn kho)
+  approveOrder: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const order = await prisma.order.findUnique({
+        where: { id: Number(id) },
+        include: { items: true }
+      });
+
+      if (!order) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+      if (order.status !== 'PENDING') return res.status(400).json({ message: 'Đơn hàng không ở trạng thái Chờ duyệt' });
+
+      await prisma.$transaction(async (tx) => {
+        // 1. Cập nhật status Hoàn thành
+        await tx.order.update({
+          where: { id: order.id },
+          data: { status: 'COMPLETED' }
+        });
+
+        // 2. Trừ tồn kho TỔNG và Xử lý Lô (Batch)
+        for (const item of order.items) {
+          const qtyToDeduct = Number(item.quantity);
+
+          // 2.1 Trừ Tồn kho tổng ProductVariant
+          await tx.productVariant.update({
+            where: { id: Number(item.variantId) },
+            data: { stockCount: { decrement: qtyToDeduct } }
+          });
+
+          // 2.2 Xử lý Tồn Kho Lô (Batch)
+          if (item.batchId) {
+            await tx.batch.update({
+              where: { id: Number(item.batchId) },
+              data: { currentQty: { decrement: qtyToDeduct } }
+            });
+          } else {
+            const batches = await tx.batch.findMany({
+              where: { variantId: Number(item.variantId), currentQty: { gt: 0 } },
+              orderBy: [
+                { currentQty: 'asc' }, 
+                { id: 'asc' }          
+              ]
+            });
+
+            let remainingQty = qtyToDeduct;
+            for (const b of batches) {
+              if (remainingQty <= 0) break;
+              const deductAmount = Math.min(b.currentQty, remainingQty);
+              await tx.batch.update({
+                where: { id: b.id },
+                data: { currentQty: { decrement: deductAmount } }
+              });
+              remainingQty -= deductAmount;
+            }
+          }
+        }
+      });
+
+      res.status(200).json({ message: 'Duyệt đơn và xuất kho thành công!' });
+    } catch (error) {
+      console.error("Lỗi khi duyệt đơn:", error);
+      res.status(500).json({ message: 'Lỗi server khi duyệt đơn' });
     }
   }
 };
