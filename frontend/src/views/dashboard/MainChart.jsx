@@ -1,10 +1,29 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import { CChartLine } from '@coreui/react-chartjs'
 import { getStyle } from '@coreui/utils'
+import axiosClient from '../../api/axiosClient'
 
-const MainChart = () => {
+const MainChart = ({ timeFilter = 'Month' }) => {
   const chartRef = useRef(null)
+  const [chartData, setChartData] = useState({
+    labels: [],
+    datasets: { revenues: [], profits: [], ordersCount: [] }
+  })
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await axiosClient.get(`/dashboard/chart?timeFilter=${timeFilter}`)
+        if (res && res.labels) {
+          setChartData(res)
+        }
+      } catch (e) {
+        console.error("Lỗi get biểu đồ", e)
+      }
+    }
+    fetchData()
+  }, [timeFilter])
 
   useEffect(() => {
     const handleColorSchemeChange = () => {
@@ -38,49 +57,36 @@ const MainChart = () => {
         ref={chartRef}
         style={{ height: '300px', marginTop: '40px' }}
         data={{
-          labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+          labels: chartData.labels,
           datasets: [
             {
-              label: 'My First dataset',
+              label: 'Doanh thu (VNĐ)',
               backgroundColor: `rgba(${getStyle('--cui-info-rgb')}, .1)`,
               borderColor: getStyle('--cui-info'),
               pointHoverBackgroundColor: getStyle('--cui-info'),
               borderWidth: 2,
-              data: [
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-              ],
+              data: chartData.datasets.revenues,
               fill: true,
+              yAxisID: 'y',
             },
             {
-              label: 'My Second dataset',
+              label: 'Lợi nhuận (VNĐ)',
               backgroundColor: 'transparent',
               borderColor: getStyle('--cui-success'),
               pointHoverBackgroundColor: getStyle('--cui-success'),
               borderWidth: 2,
-              data: [
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-                random(50, 200),
-              ],
+              data: chartData.datasets.profits,
+              yAxisID: 'y',
             },
             {
-              label: 'My Third dataset',
+              label: 'Lượng đơn',
               backgroundColor: 'transparent',
               borderColor: getStyle('--cui-danger'),
               pointHoverBackgroundColor: getStyle('--cui-danger'),
-              borderWidth: 1,
+              borderWidth: 2,
               borderDash: [8, 5],
-              data: [65, 65, 65, 65, 65, 65, 65],
+              data: chartData.datasets.ordersCount,
+              yAxisID: 'y1',
             },
           ],
         }}
@@ -102,6 +108,9 @@ const MainChart = () => {
               },
             },
             y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
               beginAtZero: true,
               border: {
                 color: getStyle('--cui-border-color-translucent'),
@@ -109,11 +118,29 @@ const MainChart = () => {
               grid: {
                 color: getStyle('--cui-border-color-translucent'),
               },
-              max: 250,
               ticks: {
                 color: getStyle('--cui-body-color'),
-                maxTicksLimit: 5,
-                stepSize: Math.ceil(250 / 5),
+                callback: function(value) {
+                  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value);
+                }
+              },
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              beginAtZero: true,
+              grid: {
+                drawOnChartArea: false, // Không vẽ đè lưới lên y1 để tránh rối mắt
+              },
+              ticks: {
+                color: getStyle('--cui-danger'),
+                stepSize: 1,
+                callback: function(value) {
+                  if (Math.floor(value) === value) {
+                    return value + ' Đơn';
+                  }
+                }
               },
             },
           },

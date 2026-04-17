@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import classNames from 'classnames'
 
 import {
@@ -18,6 +18,7 @@ import {
   CTableHead,
   CTableHeaderCell,
   CTableRow,
+  CBadge
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import {
@@ -50,11 +51,12 @@ import avatar4 from 'src/assets/images/avatars/4.jpg'
 import avatar5 from 'src/assets/images/avatars/5.jpg'
 import avatar6 from 'src/assets/images/avatars/6.jpg'
 
-import WidgetsBrand from '../widgets/WidgetsBrand'
 import WidgetsDropdown from '../widgets/WidgetsDropdown'
 import MainChart from './MainChart'
 
 const Dashboard = () => {
+  const [chartTimeFilter, setChartTimeFilter] = useState('Month')
+
   const progressExample = [
     { title: 'Visits', value: '29.703 Users', percent: 40, color: 'success' },
     { title: 'Unique', value: '24.093 Users', percent: 20, color: 'info' },
@@ -64,117 +66,31 @@ const Dashboard = () => {
   ]
 
   const progressGroupExample1 = [
-    { title: 'Monday', value1: 34, value2: 78 },
-    { title: 'Tuesday', value1: 56, value2: 94 },
-    { title: 'Wednesday', value1: 12, value2: 67 },
-    { title: 'Thursday', value1: 43, value2: 91 },
-    { title: 'Friday', value1: 22, value2: 73 },
-    { title: 'Saturday', value1: 53, value2: 82 },
-    { title: 'Sunday', value1: 9, value2: 69 },
+    { title: 'Thứ 2', value1: 85, value1Display: '25.500.000 ₫', value2: 78, value2Display: '120 Đơn' },
+    { title: 'Thứ 3', value1: 94, value1Display: '32.100.000 ₫', value2: 91, value2Display: '145 Đơn' },
+    { title: 'Thứ 4', value1: 52, value1Display: '15.600.000 ₫', value2: 67, value2Display: '89 Đơn' },
+    { title: 'Thứ 5', value1: 65, value1Display: '19.800.000 ₫', value2: 73, value2Display: '105 Đơn' },
+    { title: 'Thứ 6', value1: 45, value1Display: '13.200.000 ₫', value2: 41, value2Display: '62 Đơn' },
+    { title: 'Thứ 7', value1: 22, value1Display: '6.400.000 ₫', value2: 25, value2Display: '34 Đơn' },
+    { title: 'Chủ Nhật', value1: 15, value1Display: '4.200.000 ₫', value2: 12, value2Display: '18 Đơn' },
   ]
 
-  const progressGroupExample2 = [
-    { title: 'Male', icon: cilUser, value: 53 },
-    { title: 'Female', icon: cilUserFemale, value: 43 },
+  const topProducts = [
+    { title: 'Tấm ốp Nano ABT', percent: 85, color: 'success' },
+    { title: 'Nẹp góc chữ V', percent: 65, color: 'info' },
+    { title: 'Tấm ốp than tre', percent: 45, color: 'warning' },
+    { title: 'Phào chỉ trần', percent: 30, color: 'danger' },
+    { title: 'Keo PUR/EVA', percent: 15, color: 'primary' },
   ]
 
-  const progressGroupExample3 = [
-    { title: 'Organic Search', icon: cibGoogle, percent: 56, value: '191,235' },
-    { title: 'Facebook', icon: cibFacebook, percent: 15, value: '51,223' },
-    { title: 'Twitter', icon: cibTwitter, percent: 11, value: '37,564' },
-    { title: 'LinkedIn', icon: cibLinkedin, percent: 8, value: '27,319' },
+  const rawSalesData = [
+    { id: 1, avatar: avatar1, name: 'Trần Văn An', orderCount: 185, totalRevenue: 650000000 },
+    { id: 2, avatar: avatar2, name: 'Lê Diệu Linh', orderCount: 125, totalRevenue: 450000000 },
+    { id: 3, avatar: avatar3, name: 'Phạm Tuấn Hải', orderCount: 98, totalRevenue: 210000000 },
+    { id: 4, avatar: avatar4, name: 'Nguyễn Hữu Tài', orderCount: 35, totalRevenue: 80000000 },
+    { id: 5, avatar: avatar5, name: 'Đào Duy Anh', orderCount: 143, totalRevenue: 520000000 },
   ]
-
-  const tableExample = [
-    {
-      avatar: { src: avatar1, status: 'success' },
-      user: {
-        name: 'Yiorgos Avraamu',
-        new: true,
-        registered: 'Jan 1, 2023',
-      },
-      country: { name: 'USA', flag: cifUs },
-      usage: {
-        value: 50,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'success',
-      },
-      payment: { name: 'Mastercard', icon: cibCcMastercard },
-      activity: '10 sec ago',
-    },
-    {
-      avatar: { src: avatar2, status: 'danger' },
-      user: {
-        name: 'Avram Tarasios',
-        new: false,
-        registered: 'Jan 1, 2023',
-      },
-      country: { name: 'Brazil', flag: cifBr },
-      usage: {
-        value: 22,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'info',
-      },
-      payment: { name: 'Visa', icon: cibCcVisa },
-      activity: '5 minutes ago',
-    },
-    {
-      avatar: { src: avatar3, status: 'warning' },
-      user: { name: 'Quintin Ed', new: true, registered: 'Jan 1, 2023' },
-      country: { name: 'India', flag: cifIn },
-      usage: {
-        value: 74,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'warning',
-      },
-      payment: { name: 'Stripe', icon: cibCcStripe },
-      activity: '1 hour ago',
-    },
-    {
-      avatar: { src: avatar4, status: 'secondary' },
-      user: { name: 'Enéas Kwadwo', new: true, registered: 'Jan 1, 2023' },
-      country: { name: 'France', flag: cifFr },
-      usage: {
-        value: 98,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'danger',
-      },
-      payment: { name: 'PayPal', icon: cibCcPaypal },
-      activity: 'Last month',
-    },
-    {
-      avatar: { src: avatar5, status: 'success' },
-      user: {
-        name: 'Agapetus Tadeáš',
-        new: true,
-        registered: 'Jan 1, 2023',
-      },
-      country: { name: 'Spain', flag: cifEs },
-      usage: {
-        value: 22,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'primary',
-      },
-      payment: { name: 'Google Wallet', icon: cibCcApplePay },
-      activity: 'Last week',
-    },
-    {
-      avatar: { src: avatar6, status: 'danger' },
-      user: {
-        name: 'Friderik Dávid',
-        new: true,
-        registered: 'Jan 1, 2023',
-      },
-      country: { name: 'Poland', flag: cifPl },
-      usage: {
-        value: 43,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'success',
-      },
-      payment: { name: 'Amex', icon: cibCcAmex },
-      activity: 'Last week',
-    },
-  ]
+  const salesData = [...rawSalesData].sort((a, b) => b.totalRevenue - a.totalRevenue)
 
   return (
     <>
@@ -184,86 +100,83 @@ const Dashboard = () => {
           <CRow>
             <CCol sm={5}>
               <h4 id="traffic" className="card-title mb-0">
-                Traffic
+                Biểu Đồ Theo Dõi
               </h4>
-              <div className="small text-body-secondary">January - July 2023</div>
+              <div className="small text-body-secondary">Báo cáo đa chiều theo: {chartTimeFilter === 'Day' ? 'Hôm nay' : (chartTimeFilter === 'Month' ? 'Tháng này' : 'Năm nay')}</div>
             </CCol>
             <CCol sm={7} className="d-none d-md-block">
               <CButton color="primary" className="float-end">
                 <CIcon icon={cilCloudDownload} />
               </CButton>
               <CButtonGroup className="float-end me-3">
-                {['Day', 'Month', 'Year'].map((value) => (
+                {[
+                  { value: 'Day', label: 'Ngày' },
+                  { value: 'Month', label: 'Tháng' },
+                  { value: 'Year', label: 'Năm' }
+                ].map((item) => (
                   <CButton
                     color="outline-secondary"
-                    key={value}
+                    key={item.value}
                     className="mx-0"
-                    active={value === 'Month'}
+                    active={item.value === chartTimeFilter}
+                    onClick={() => setChartTimeFilter(item.value)}
                   >
-                    {value}
+                    {item.label}
                   </CButton>
                 ))}
               </CButtonGroup>
             </CCol>
           </CRow>
-          <MainChart />
+          <MainChart timeFilter={chartTimeFilter} />
         </CCardBody>
-        <CCardFooter>
-          <CRow
-            xs={{ cols: 1, gutter: 4 }}
-            sm={{ cols: 2 }}
-            lg={{ cols: 4 }}
-            xl={{ cols: 5 }}
-            className="mb-2 text-center"
-          >
-            {progressExample.map((item, index, items) => (
-              <CCol
-                className={classNames({
-                  'd-none d-xl-block': index + 1 === items.length,
-                })}
-                key={index}
-              >
-                <div className="text-body-secondary">{item.title}</div>
-                <div className="fw-semibold text-truncate">
-                  {item.value} ({item.percent}%)
-                </div>
-                <CProgress thin className="mt-2" color={item.color} value={item.percent} />
-              </CCol>
-            ))}
-          </CRow>
-        </CCardFooter>
       </CCard>
-      <WidgetsBrand className="mb-4" withCharts />
       <CRow>
         <CCol xs>
           <CCard className="mb-4">
-            <CCardHeader>Traffic {' & '} Sales</CCardHeader>
+            <CCardHeader>Phân Tích Bán Hàng</CCardHeader>
             <CCardBody>
               <CRow>
                 <CCol xs={12} md={6} xl={6}>
+                  <div className="fs-5 fw-semibold mb-4">Doanh thu & Sản lượng theo ngày</div>
                   <CRow>
                     <CCol xs={6}>
                       <div className="border-start border-start-4 border-start-info py-1 px-3">
-                        <div className="text-body-secondary text-truncate small">New Clients</div>
-                        <div className="fs-5 fw-semibold">9,123</div>
+                        <div className="text-body-secondary text-truncate small">Đại lý mới</div>
+                        <div className="fs-5 fw-semibold">123</div>
                       </div>
                     </CCol>
                     <CCol xs={6}>
                       <div className="border-start border-start-4 border-start-danger py-1 px-3 mb-3">
                         <div className="text-body-secondary text-truncate small">
-                          Recurring Clients
+                          Đại lý quay lại
                         </div>
-                        <div className="fs-5 fw-semibold">22,643</div>
+                        <div className="fs-5 fw-semibold">431</div>
                       </div>
                     </CCol>
                   </CRow>
                   <hr className="mt-0" />
+
+                  <div className="d-flex justify-content-between mb-4 small">
+                    <div>
+                      <span className="d-inline-block bg-info rounded-circle me-2" style={{ width: '10px', height: '10px' }}></span>
+                      Doanh thu (VNĐ)
+                    </div>
+                    <div>
+                      <span className="d-inline-block bg-danger rounded-circle me-2" style={{ width: '10px', height: '10px' }}></span>
+                      Số lượng đơn xuất (Đơn)
+                    </div>
+                  </div>
+
                   {progressGroupExample1.map((item, index) => (
                     <div className="progress-group mb-4" key={index}>
                       <div className="progress-group-prepend">
-                        <span className="text-body-secondary small">{item.title}</span>
+                        <span className="text-body-secondary small fw-bold">{item.title}</span>
                       </div>
                       <div className="progress-group-bars">
+                        <div className="d-flex justify-content-between small text-body-secondary mb-1">
+                          <span>{item.value1Display}</span>
+                          <span>{item.value2Display}</span>
+                        </div>
                         <CProgress thin color="info" value={item.value1} />
                         <CProgress thin color="danger" value={item.value2} />
                       </div>
@@ -271,50 +184,32 @@ const Dashboard = () => {
                   ))}
                 </CCol>
                 <CCol xs={12} md={6} xl={6}>
+                  <div className="fs-5 fw-semibold mb-4">Top 5 Sản Phẩm Bán Chạy Nhất</div>
                   <CRow>
                     <CCol xs={6}>
                       <div className="border-start border-start-4 border-start-warning py-1 px-3 mb-3">
-                        <div className="text-body-secondary text-truncate small">Pageviews</div>
-                        <div className="fs-5 fw-semibold">78,623</div>
+                        <div className="text-body-secondary text-truncate small">Tổng đơn hàng</div>
+                        <div className="fs-5 fw-semibold">1,250</div>
                       </div>
                     </CCol>
                     <CCol xs={6}>
                       <div className="border-start border-start-4 border-start-success py-1 px-3 mb-3">
-                        <div className="text-body-secondary text-truncate small">Organic</div>
-                        <div className="fs-5 fw-semibold">49,123</div>
+                        <div className="text-body-secondary text-truncate small">Tỷ lệ chốt</div>
+                        <div className="fs-5 fw-semibold">68.5%</div>
                       </div>
                     </CCol>
                   </CRow>
 
                   <hr className="mt-0" />
 
-                  {progressGroupExample2.map((item, index) => (
+                  {topProducts.map((item, index) => (
                     <div className="progress-group mb-4" key={index}>
                       <div className="progress-group-header">
-                        <CIcon className="me-2" icon={item.icon} size="lg" />
-                        <span>{item.title}</span>
-                        <span className="ms-auto fw-semibold">{item.value}%</span>
+                        <span className="title fw-semibold">{item.title}</span>
+                        <span className="ms-auto fw-semibold">{item.percent}% <span className="text-body-secondary small fw-normal">doanh số</span></span>
                       </div>
                       <div className="progress-group-bars">
-                        <CProgress thin color="warning" value={item.value} />
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="mb-5"></div>
-
-                  {progressGroupExample3.map((item, index) => (
-                    <div className="progress-group" key={index}>
-                      <div className="progress-group-header">
-                        <CIcon className="me-2" icon={item.icon} size="lg" />
-                        <span>{item.title}</span>
-                        <span className="ms-auto fw-semibold">
-                          {item.value}{' '}
-                          <span className="text-body-secondary small">({item.percent}%)</span>
-                        </span>
-                      </div>
-                      <div className="progress-group-bars">
-                        <CProgress thin color="success" value={item.percent} />
+                        <CProgress thin color={item.color} value={item.percent} />
                       </div>
                     </div>
                   ))}
@@ -323,57 +218,64 @@ const Dashboard = () => {
 
               <br />
 
-              <CTable align="middle" className="mb-0 border" hover responsive>
-                <CTableHead className="text-nowrap">
+              <div className="fs-5 fw-semibold mb-4 text-center">Bảng Vinh Danh Nhân Viên Bán Hàng</div>
+              <CTable align="middle" className="mb-0 border text-nowrap" hover responsive>
+                <CTableHead>
                   <CTableRow>
-                    <CTableHeaderCell className="bg-body-tertiary text-center">
-                      <CIcon icon={cilPeople} />
-                    </CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary">User</CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary text-center">
-                      Country
-                    </CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary">Usage</CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary text-center">
-                      Payment Method
-                    </CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary">Activity</CTableHeaderCell>
+                    <CTableHeaderCell className="bg-body-tertiary text-center w-25">Xếp hạng</CTableHeaderCell>
+                    <CTableHeaderCell className="bg-body-tertiary">Nhân viên</CTableHeaderCell>
+                    <CTableHeaderCell className="bg-body-tertiary text-center">Số đơn bán ra</CTableHeaderCell>
+                    <CTableHeaderCell className="bg-body-tertiary text-end">Tổng doanh thu</CTableHeaderCell>
+                    <CTableHeaderCell className="bg-body-tertiary text-center">Xếp loại</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                  {tableExample.map((item, index) => (
-                    <CTableRow v-for="item in tableItems" key={index}>
-                      <CTableDataCell className="text-center">
-                        <CAvatar size="md" src={item.avatar.src} status={item.avatar.status} />
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div>{item.user.name}</div>
-                        <div className="small text-body-secondary text-nowrap">
-                          <span>{item.user.new ? 'New' : 'Recurring'}</span> | Registered:{' '}
-                          {item.user.registered}
-                        </div>
-                      </CTableDataCell>
-                      <CTableDataCell className="text-center">
-                        <CIcon size="xl" icon={item.country.flag} title={item.country.name} />
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div className="d-flex justify-content-between text-nowrap">
-                          <div className="fw-semibold">{item.usage.value}%</div>
-                          <div className="ms-3">
-                            <small className="text-body-secondary">{item.usage.period}</small>
+                  {salesData.map((item, index) => {
+                    const rank = index + 1;
+                    let rankDisplay = rank;
+                    if (rank === 1) rankDisplay = '🥇 1';
+                    if (rank === 2) rankDisplay = '🥈 2';
+                    if (rank === 3) rankDisplay = '🥉 3';
+
+                    let badgeColor = 'warning';
+                    let badgeLabel = 'Cố gắng';
+                    if (item.totalRevenue >= 400000000) {
+                      badgeColor = 'success';
+                      badgeLabel = 'Xuất Sắc';
+                    } else if (item.totalRevenue >= 200000000) {
+                      badgeColor = 'primary';
+                      badgeLabel = 'Đạt';
+                    }
+
+                    return (
+                      <CTableRow key={item.id}>
+                        <CTableDataCell className="text-center">
+                          <span className={`fs-5 fw-bold ${rank <= 3 ? 'text-warning' : 'text-body-secondary'}`}>
+                            {rankDisplay}
+                          </span>
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <div className="d-flex align-items-center">
+                            <CAvatar size="md" src={item.avatar} className="me-3" />
+                            <div className="fw-semibold">{item.name}</div>
                           </div>
-                        </div>
-                        <CProgress thin color={item.usage.color} value={item.usage.value} />
-                      </CTableDataCell>
-                      <CTableDataCell className="text-center">
-                        <CIcon size="xl" icon={item.payment.icon} />
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div className="small text-body-secondary text-nowrap">Last login</div>
-                        <div className="fw-semibold text-nowrap">{item.activity}</div>
-                      </CTableDataCell>
-                    </CTableRow>
-                  ))}
+                        </CTableDataCell>
+                        <CTableDataCell className="text-center">
+                          <span className="fw-bold">{item.orderCount} Đơn</span>
+                        </CTableDataCell>
+                        <CTableDataCell className="text-end">
+                          <span className="fs-6 fw-bold text-success pe-3">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(item.totalRevenue)}
+                          </span>
+                        </CTableDataCell>
+                        <CTableDataCell className="text-center">
+                          <CBadge color={badgeColor} shape="rounded-pill" className="px-3 py-2">
+                            {badgeLabel}
+                          </CBadge>
+                        </CTableDataCell>
+                      </CTableRow>
+                    )
+                  })}
                 </CTableBody>
               </CTable>
             </CCardBody>

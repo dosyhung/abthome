@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 
 import {
@@ -9,15 +9,43 @@ import {
   CDropdownItem,
   CDropdownToggle,
   CWidgetStatsA,
+  CFormSelect
 } from '@coreui/react'
 import { getStyle } from '@coreui/utils'
 import { CChartBar, CChartLine } from '@coreui/react-chartjs'
 import CIcon from '@coreui/icons-react'
 import { cilArrowBottom, cilArrowTop, cilOptions } from '@coreui/icons'
+import axiosClient from '../../api/axiosClient'
+
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0)
+}
 
 const WidgetsDropdown = (props) => {
   const widgetChartRef1 = useRef(null)
   const widgetChartRef2 = useRef(null)
+
+  const [timeFilter, setTimeFilter] = useState('TODAY')
+  const [stats, setStats] = useState({
+    orders: { value: 0, rate: 0 },
+    revenue: { value: 0, rate: 0 },
+    profit: { value: 0, rate: 0 },
+    expense: { value: 0, rate: 0 }
+  })
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const response = await axiosClient.get(`/dashboard/summary?timeFilter=${timeFilter}`)
+        if (response) {
+          setStats(response)
+        }
+      } catch (err) {
+        console.error("Lỗi get dashboard:", err)
+      }
+    }
+    fetchDashboard()
+  }, [timeFilter])
 
   useEffect(() => {
     document.documentElement.addEventListener('ColorSchemeChange', () => {
@@ -38,29 +66,40 @@ const WidgetsDropdown = (props) => {
   }, [widgetChartRef1, widgetChartRef2])
 
   return (
-    <CRow className={props.className} xs={{ gutter: 4 }}>
-      <CCol sm={6} xl={4} xxl={3}>
+    <>
+      <div className="d-flex justify-content-end mb-3">
+        <CFormSelect 
+          value={timeFilter}
+          onChange={(e) => setTimeFilter(e.target.value)}
+          style={{ width: '180px', cursor: 'pointer' }}
+          className="shadow-sm border-0"
+        >
+          <option value="TODAY">Hôm nay</option>
+          <option value="WEEK">Tuần này</option>
+          <option value="MONTH">Tháng này</option>
+        </CFormSelect>
+      </div>
+      <CRow className={props.className} xs={{ gutter: 4 }}>
+        <CCol sm={6} xl={4} xxl={3}>
         <CWidgetStatsA
           color="primary"
           value={
             <>
-              26K{' '}
+              {stats.orders.value} Đơn{' '}
               <span className="fs-6 fw-normal">
-                (-12.4% <CIcon icon={cilArrowBottom} />)
+                ({stats.orders.rate > 0 ? '+' : ''}{stats.orders.rate}% <CIcon icon={stats.orders.rate >= 0 ? cilArrowTop : cilArrowBottom} />)
               </span>
             </>
           }
-          title="Users"
+          title="Tổng Hoá Đơn"
           action={
             <CDropdown alignment="end">
               <CDropdownToggle color="transparent" caret={false} className="text-white p-0">
                 <CIcon icon={cilOptions} />
               </CDropdownToggle>
               <CDropdownMenu>
-                <CDropdownItem>Action</CDropdownItem>
-                <CDropdownItem>Another action</CDropdownItem>
-                <CDropdownItem>Something else here...</CDropdownItem>
-                <CDropdownItem disabled>Disabled action</CDropdownItem>
+                <CDropdownItem>Xem chi tiết</CDropdownItem>
+                <CDropdownItem>Xuất báo cáo</CDropdownItem>
               </CDropdownMenu>
             </CDropdown>
           }
@@ -70,10 +109,10 @@ const WidgetsDropdown = (props) => {
               className="mt-3 mx-3"
               style={{ height: '70px' }}
               data={{
-                labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+                labels: ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'],
                 datasets: [
                   {
-                    label: 'My First dataset',
+                    label: 'Số đơn',
                     backgroundColor: 'transparent',
                     borderColor: 'rgba(255,255,255,.55)',
                     pointBackgroundColor: getStyle('--cui-primary'),
@@ -134,23 +173,21 @@ const WidgetsDropdown = (props) => {
           color="info"
           value={
             <>
-              $6.200{' '}
+              {formatCurrency(stats.revenue.value)}{' '}
               <span className="fs-6 fw-normal">
-                (40.9% <CIcon icon={cilArrowTop} />)
+                ({stats.revenue.rate > 0 ? '+' : ''}{stats.revenue.rate}% <CIcon icon={stats.revenue.rate >= 0 ? cilArrowTop : cilArrowBottom} />)
               </span>
             </>
           }
-          title="Income"
+          title="Tổng doanh thu"
           action={
             <CDropdown alignment="end">
               <CDropdownToggle color="transparent" caret={false} className="text-white p-0">
                 <CIcon icon={cilOptions} />
               </CDropdownToggle>
               <CDropdownMenu>
-                <CDropdownItem>Action</CDropdownItem>
-                <CDropdownItem>Another action</CDropdownItem>
-                <CDropdownItem>Something else here...</CDropdownItem>
-                <CDropdownItem disabled>Disabled action</CDropdownItem>
+                <CDropdownItem>Xem chi tiết</CDropdownItem>
+                <CDropdownItem>Xuất báo cáo</CDropdownItem>
               </CDropdownMenu>
             </CDropdown>
           }
@@ -160,10 +197,10 @@ const WidgetsDropdown = (props) => {
               className="mt-3 mx-3"
               style={{ height: '70px' }}
               data={{
-                labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+                labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7'],
                 datasets: [
                   {
-                    label: 'My First dataset',
+                    label: 'Doanh thu',
                     backgroundColor: 'transparent',
                     borderColor: 'rgba(255,255,255,.55)',
                     pointBackgroundColor: getStyle('--cui-info'),
@@ -223,23 +260,21 @@ const WidgetsDropdown = (props) => {
           color="warning"
           value={
             <>
-              2.49%{' '}
+              {formatCurrency(stats.profit.value)}{' '}
               <span className="fs-6 fw-normal">
-                (84.7% <CIcon icon={cilArrowTop} />)
+                ({stats.profit.rate > 0 ? '+' : ''}{stats.profit.rate}% <CIcon icon={stats.profit.rate >= 0 ? cilArrowTop : cilArrowBottom} />)
               </span>
             </>
           }
-          title="Conversion Rate"
+          title="Tổng Lợi Nhuận"
           action={
             <CDropdown alignment="end">
               <CDropdownToggle color="transparent" caret={false} className="text-white p-0">
                 <CIcon icon={cilOptions} />
               </CDropdownToggle>
               <CDropdownMenu>
-                <CDropdownItem>Action</CDropdownItem>
-                <CDropdownItem>Another action</CDropdownItem>
-                <CDropdownItem>Something else here...</CDropdownItem>
-                <CDropdownItem disabled>Disabled action</CDropdownItem>
+                <CDropdownItem>Xem chi tiết</CDropdownItem>
+                <CDropdownItem>Xuất báo cáo</CDropdownItem>
               </CDropdownMenu>
             </CDropdown>
           }
@@ -248,10 +283,10 @@ const WidgetsDropdown = (props) => {
               className="mt-3"
               style={{ height: '70px' }}
               data={{
-                labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+                labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7'],
                 datasets: [
                   {
-                    label: 'My First dataset',
+                    label: 'Lợi nhuận',
                     backgroundColor: 'rgba(255,255,255,.2)',
                     borderColor: 'rgba(255,255,255,.55)',
                     data: [78, 81, 80, 45, 34, 12, 40],
@@ -295,23 +330,21 @@ const WidgetsDropdown = (props) => {
           color="danger"
           value={
             <>
-              44K{' '}
+              {formatCurrency(stats.expense.value)}{' '}
               <span className="fs-6 fw-normal">
-                (-23.6% <CIcon icon={cilArrowBottom} />)
+                ({stats.expense.rate > 0 ? '+' : ''}{stats.expense.rate}% <CIcon icon={stats.expense.rate >= 0 ? cilArrowTop : cilArrowBottom} />)
               </span>
             </>
           }
-          title="Sessions"
+          title="Tổng Chi"
           action={
             <CDropdown alignment="end">
               <CDropdownToggle color="transparent" caret={false} className="text-white p-0">
                 <CIcon icon={cilOptions} />
               </CDropdownToggle>
               <CDropdownMenu>
-                <CDropdownItem>Action</CDropdownItem>
-                <CDropdownItem>Another action</CDropdownItem>
-                <CDropdownItem>Something else here...</CDropdownItem>
-                <CDropdownItem disabled>Disabled action</CDropdownItem>
+                <CDropdownItem>Xem chi tiết</CDropdownItem>
+                <CDropdownItem>Xuất báo cáo</CDropdownItem>
               </CDropdownMenu>
             </CDropdown>
           }
@@ -321,26 +354,26 @@ const WidgetsDropdown = (props) => {
               style={{ height: '70px' }}
               data={{
                 labels: [
-                  'January',
-                  'February',
-                  'March',
-                  'April',
-                  'May',
-                  'June',
-                  'July',
-                  'August',
-                  'September',
-                  'October',
-                  'November',
-                  'December',
-                  'January',
-                  'February',
-                  'March',
-                  'April',
+                  'T1',
+                  'T2',
+                  'T3',
+                  'T4',
+                  'T5',
+                  'T6',
+                  'T7',
+                  'T8',
+                  'T9',
+                  'T10',
+                  'T11',
+                  'T12',
+                  'T1 năm sau',
+                  'T2 năm sau',
+                  'T3 năm sau',
+                  'T4 năm sau',
                 ],
                 datasets: [
                   {
-                    label: 'My First dataset',
+                    label: 'Chi phí',
                     backgroundColor: 'rgba(255,255,255,.2)',
                     borderColor: 'rgba(255,255,255,.55)',
                     data: [78, 81, 80, 45, 34, 12, 40, 85, 65, 23, 12, 98, 34, 84, 67, 82],
@@ -385,6 +418,7 @@ const WidgetsDropdown = (props) => {
         />
       </CCol>
     </CRow>
+    </>
   )
 }
 
