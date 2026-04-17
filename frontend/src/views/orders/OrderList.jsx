@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   CCard,
   CCardHeader,
@@ -21,7 +22,10 @@ import {
   CModalBody,
   CModalFooter,
   CFormInput,
-  CFormTextarea
+  CFormTextarea,
+  CFormSelect,
+  CPagination,
+  CPaginationItem
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilPlus, cilPrint, cilTrash, cilList, cilWarning } from '@coreui/icons'
@@ -78,13 +82,20 @@ const getShippingStatusBadge = (shipping) => {
 // ===============================================
 // MAIN COMPONENT
 // ===============================================
+// ===============================================
 const OrderList = () => {
+  const navigate = useNavigate()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [toast, addToast] = useState(0)
   const toaster = useRef()
   const [showApproveModal, setShowApproveModal] = useState(false)
   const [selectedOrderToApprove, setSelectedOrderToApprove] = useState(null)
+
+  // -- LOGIC PHÂN TRANG & LỌC --
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [timeFilter, setTimeFilter] = useState('ALL')
 
   // -- LOGIC IN ẤN --
   const [showPrintModal, setShowPrintModal] = useState(false)
@@ -143,15 +154,19 @@ const OrderList = () => {
   }
 
   useEffect(() => {
-    fetchOrders()
-  }, [])
+    fetchOrders(1, timeFilter)
+  }, [timeFilter])
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (page = 1, currentFilter = timeFilter) => {
     try {
       setLoading(true)
-      const res = await axiosClient.get('/orders')
+      const res = await axiosClient.get(`/orders?page=${page}&limit=11&timeFilter=${currentFilter}`)
       if (res && res.data) {
         setOrders(res.data)
+        if (res.meta) {
+          setTotalPages(res.meta.totalPages || 1)
+          setCurrentPage(res.meta.currentPage || 1)
+        }
       }
     } catch (error) {
       console.error("Error fetching orders:", error)
@@ -185,9 +200,30 @@ const OrderList = () => {
     <CCard className="mb-4">
       <CCardHeader className="d-flex justify-content-between align-items-center">
         <strong>Quản lý đơn hàng bán</strong>
-        <CButton color="info" className="text-white d-flex align-items-center gap-1">
-          <CIcon icon={cilPlus} /> Tạo đơn mới
-        </CButton>
+        <div className="d-flex gap-2">
+          {/* Nút màng lọc */}
+          <CFormSelect 
+            value={timeFilter}
+            onChange={(e) => {
+              setTimeFilter(e.target.value)
+              setCurrentPage(1) // Về lại trang 1 khi đổi màng lọc
+            }}
+            style={{ width: '180px', cursor: 'pointer' }}
+          >
+            <option value="ALL">Tất cả thời gian</option>
+            <option value="TODAY">Hôm nay</option>
+            <option value="WEEK">Tuần này</option>
+            <option value="MONTH">Tháng này</option>
+          </CFormSelect>
+
+          <CButton 
+            color="info" 
+            className="text-white d-flex align-items-center gap-1"
+            onClick={() => navigate('/orders/create')}
+          >
+            <CIcon icon={cilPlus} /> Tạo đơn mới
+          </CButton>
+        </div>
       </CCardHeader>
       <CCardBody>
         {loading ? (
@@ -214,8 +250,14 @@ const OrderList = () => {
                   return (
                     <CTableRow key={order.id}>
                       <CTableDataCell>
-                        {/* Font nổi bật */}
-                        <span className="fw-bold text-primary">{order.code}</span>
+                        <span 
+                          className="fw-bold text-primary" 
+                          style={{ cursor: 'pointer', textDecoration: 'underline' }} 
+                          title="Xem lại Hóa Đơn"
+                          onClick={() => onPrintClick(order)}
+                        >
+                          {order.code}
+                        </span>
                       </CTableDataCell>
                       <CTableDataCell>{formatDate(order.createdAt)}</CTableDataCell>
                       <CTableDataCell>
@@ -248,7 +290,13 @@ const OrderList = () => {
                         </CBadge>
                       </CTableDataCell>
                       <CTableDataCell className="text-center text-nowrap">
-                        <CButton color="secondary" variant="ghost" size="sm" title="Xem chi tiết">
+                        <CButton 
+                          color="secondary" 
+                          variant="ghost" 
+                          size="sm" 
+                          title="Chi tiết & Hóa đơn"
+                          onClick={() => onPrintClick(order)}
+                        >
                           <CIcon icon={cilList} />
                         </CButton>
                         <CButton 
@@ -256,13 +304,10 @@ const OrderList = () => {
                           variant="ghost" 
                           size="sm" 
                           className="mx-1" 
-                          title="In Hóa Đơn"
+                          title="In Hóa Đơn Nhanh"
                           onClick={() => onPrintClick(order)}
                         >
                           <CIcon icon={cilPrint} />
-                        </CButton>
-                        <CButton color="danger" variant="ghost" size="sm" title="Hủy Đơn" disabled={order.status === 'DELIVERED' || order.status === 'COMPLETED' || order.status === 'CANCELLED'}>
-                          <CIcon icon={cilTrash} />
                         </CButton>
                       </CTableDataCell>
                     </CTableRow>
@@ -270,6 +315,40 @@ const OrderList = () => {
                 })}
               </CTableBody>
             </CTable>
+
+            {/* BỘ PHÂN TRANG */}
+            {totalPages > 1 && (
+              <div className="d-flex justify-content-center mt-4">
+                <CPagination aria-label="Page navigation" className="mb-0">
+                  <CPaginationItem 
+                    disabled={currentPage === 1} 
+                    onClick={() => fetchOrders(currentPage - 1)}
+                    style={{ cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+                  >
+                    Trang trước
+                  </CPaginationItem>
+                  
+                  {[...Array(totalPages)].map((_, i) => (
+                    <CPaginationItem 
+                      key={i + 1} 
+                      active={i + 1 === currentPage} 
+                      onClick={() => fetchOrders(i + 1)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {i + 1}
+                    </CPaginationItem>
+                  ))}
+                  
+                  <CPaginationItem 
+                    disabled={currentPage === totalPages} 
+                    onClick={() => fetchOrders(currentPage + 1)}
+                    style={{ cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+                  >
+                    Trang sau
+                  </CPaginationItem>
+                </CPagination>
+              </div>
+            )}
           </div>
         )}
       </CCardBody>

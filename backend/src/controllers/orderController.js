@@ -4,14 +4,47 @@ const orderController = {
   // Lấy danh sách Đơn Hàng
   getAllOrders: async (req, res) => {
     try {
-      const orders = await prisma.order.findMany({
-        orderBy: { createdAt: 'desc' },
-        include: {
-          customer: { select: { name: true, phone: true } },
-          shipping: true
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 11;
+      const skip = (page - 1) * limit;
+      const timeFilter = req.query.timeFilter || 'ALL';
+
+      let whereClause = {};
+      const now = new Date();
+      if (timeFilter === 'TODAY') {
+        const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+        whereClause.createdAt = { gte: startOfDay };
+      } else if (timeFilter === 'WEEK') {
+        const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 1));
+        startOfWeek.setHours(0, 0, 0, 0);
+        whereClause.createdAt = { gte: startOfWeek };
+      } else if (timeFilter === 'MONTH') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        whereClause.createdAt = { gte: startOfMonth };
+      }
+
+      const [orders, totalOrders] = await Promise.all([
+        prisma.order.findMany({
+          where: whereClause,
+          skip: skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            customer: { select: { name: true, phone: true } },
+            shipping: true
+          }
+        }),
+        prisma.order.count({ where: whereClause })
+      ]);
+
+      res.status(200).json({ 
+        data: orders, 
+        meta: {
+          totalRecords: totalOrders,
+          currentPage: page,
+          totalPages: Math.ceil(totalOrders / limit)
         }
       });
-      res.status(200).json({ data: orders });
     } catch (error) {
       console.error("Lỗi get orders:", error);
       res.status(500).json({ message: 'Lỗi server' });

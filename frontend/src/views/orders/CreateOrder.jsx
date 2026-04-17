@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import axiosClient from '../../api/axiosClient'
 import {
@@ -56,6 +57,7 @@ const parseInputCurrency = (val) => {
 // ===============================================
 const CreateOrder = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   // --- STATE: DATA TỪ BACKEND ---
   const [customers, setCustomers] = useState([])
@@ -68,14 +70,15 @@ const CreateOrder = () => {
   const [showCustomerModal, setShowCustomerModal] = useState(false)
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', address: '' })
 
-  // --- STATE: CẢNH BÁO TỒN KHO ---
-  const [showStockWarning, setShowStockWarning] = useState(false)
-  const [warningMessage, setWarningMessage] = useState('')
-
-  // ----- STATE IN ẤN (PDF) CHỐT ĐƠN -----
+  // --- STATE: THÀNH CÔNG & IN ẤN ---
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [showPrintModal, setShowPrintModal] = useState(false)
   const [printData, setPrintData] = useState(null)
   const [printSettings, setPrintSettings] = useState({})
+
+  // --- STATE: CẢNH BÁO TỒN KHO ---
+  const [showStockWarning, setShowStockWarning] = useState(false)
+  const [warningMessage, setWarningMessage] = useState('')
 
   useEffect(() => {
     fetchInitData()
@@ -250,7 +253,8 @@ const CreateOrder = () => {
 
     try {
       const response = await axiosClient.post('/orders', payload)
-      const newOrderId = response.data?.data?.id
+      // axiosClient đã tự gỡ response.data ở interceptor
+      const newOrderId = response.data?.id
 
       // Nạp thành công
       setCartItems([])
@@ -258,9 +262,8 @@ const CreateOrder = () => {
       setOrderNote('')
       setSearchTerm('')
       fetchInitData() // Kéo lại kho
-      alert("Chốt đơn thành công!")
-
-      // Hiển thị trực tiếp màn hình In Hóa Đơn PDF (CÁCH 2)
+      
+      // Kéo data in ấn để dự phòng nếu khách ấn Nút In
       if (newOrderId) {
         try {
           const [orderRes, settingsRes] = await Promise.all([
@@ -272,9 +275,13 @@ const CreateOrder = () => {
             originalPaidAmount: orderRes.data.paidAmount
           });
           setPrintSettings(settingsRes);
-          setShowPrintModal(true); // Mở Modal In
+          
+          // Mở Box Thành Công thay vì in thẳng
+          setShowSuccessModal(true);
         } catch (fetchErr) {
           console.error("Không tải được dữ liệu in hóa đơn:", fetchErr);
+          // Rớt mạng không tải được in thì vẫn phải báo thành công
+          setShowSuccessModal(true);
         }
       }
 
@@ -595,6 +602,43 @@ const CreateOrder = () => {
             QUAY LẠI
           </CButton>
         </CModalFooter>
+      </CModal>
+
+      {/* MODAL THÀNH CÔNG ĐA NHIỆM */}
+      <CModal visible={showSuccessModal} onClose={() => setShowSuccessModal(false)} backdrop="static" alignment="center">
+        <CModalHeader className="border-0 bg-success text-white">
+          <CModalTitle className="d-flex align-items-center">
+            Tạo đơn hàng thành công!
+          </CModalTitle>
+        </CModalHeader>
+        <CModalBody className="text-center py-4">
+          <CIcon icon={cilCart} size="3xl" className="text-success mb-3" />
+          <h5 className="fw-bold mb-3">Vui lòng chọn bước tiếp theo</h5>
+          <div className="d-grid gap-3 px-4">
+            <CButton 
+              color="primary" 
+              size="lg" 
+              variant="outline"
+              onClick={() => {
+                setShowSuccessModal(false)
+                setShowPrintModal(true)
+              }}
+            >
+              Xem và In Hóa Đơn Ngay
+            </CButton>
+            <CButton 
+              color="success" 
+              size="lg" 
+              className="text-white"
+              onClick={() => {
+                setShowSuccessModal(false)
+                navigate('/orders')
+              }}
+            >
+              Về Trang Quản Lý Đơn Hàng Bán
+            </CButton>
+          </div>
+        </CModalBody>
       </CModal>
 
       {/* MODAL IN HÓA ĐƠN PDF TỰ ĐỘNG - GIAO DIỆN VIEW & IN TRỰC TIẾP */}

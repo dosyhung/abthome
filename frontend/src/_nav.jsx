@@ -104,13 +104,13 @@ const _nav = [
     items: [
       {
         component: CNavItem,
-        name: 'Đơn hàng bán',
+        name: 'Danh Sách Đơn Hàng',
         icon: <CIcon icon={cilList} customClassName="nav-icon" />,
         to: '/orders/list',
       },
       {
         component: CNavItem,
-        name: 'Tạo đơn mới',
+        name: 'Tạo Hoá Đơn Bán',
         icon: <CIcon icon={cilPlus} customClassName="nav-icon" />,
         to: '/orders/create',
       },
