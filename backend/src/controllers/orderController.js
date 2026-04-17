@@ -32,7 +32,8 @@ const orderController = {
             include: {
               variant: {
                 include: { product: true }
-              }
+              },
+              batch: true
             }
           }
         }
@@ -40,12 +41,23 @@ const orderController = {
 
       if (!order) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
       
+      // Đếm Tổng số lượng đơn hàng của khách hàng này
+      const customerTotalOrders = await prisma.order.count({
+        where: { customerId: order.customerId }
+      });
+
       // Chuyển đổi format items để tương thích với template in
       const formattedOrder = {
         ...order,
+        customerTotalOrders,
         orderItems: order.items.map(item => ({
           name: item.variant?.product?.name || 'Sản phẩm',
-          productVariant: { name: item.variant?.attributes ? Object.values(item.variant.attributes).join(' - ') : '' },
+          productVariant: { 
+            name: item.variant?.attributes ? Object.values(item.variant.attributes).join(' - ') : '',
+            sku: item.variant?.sku,
+            sellPrice: item.variant?.sellPrice
+          },
+          batchNumber: item.batch?.batchNumber || null,
           quantity: item.quantity,
           price: item.price,
           unit: 'Cái' // Hoặc lấy từ product model nếu có
@@ -62,7 +74,7 @@ const orderController = {
   // Lõi tạo Đơn hàng POS
   createOrder: async (req, res) => {
     try {
-      const { customerId, items, discount = 0, paidAmount = 0, paymentMethod = 'Tiền mặt' } = req.body;
+      const { customerId, items, discount = 0, paidAmount = 0, paymentMethod = 'Tiền mặt', note = '' } = req.body;
       const userId = req.user.userId; // Trích từ JWT middleware
 
       if (!customerId || !items || items.length === 0) {
@@ -90,8 +102,8 @@ const orderController = {
       const amountToPay = Number(paidAmount);
       const debtDifference = finalAmount - amountToPay;
 
-      // Sinh mã Code tự động: ORD + Time
-      const orderCode = 'ORD' + Date.now().toString().slice(-6);
+      // Sinh mã Code tự động: HD + Time
+      const orderCode = 'HD' + Date.now().toString().slice(-6);
       let orderStatus = 'PENDING'; // Khởi tạo chờ duyệt
 
       // Bắt đầu PRISMA TRANSACTION
@@ -108,6 +120,7 @@ const orderController = {
             finalAmount,
             paidAmount: amountToPay,
             status: orderStatus,
+            note: note,
             items: {
               create: items.map(i => ({
                 variantId: Number(i.variantId),
@@ -242,6 +255,59 @@ const orderController = {
     } catch (error) {
       console.error("Lỗi khi duyệt đơn:", error);
       res.status(500).json({ message: 'Lỗi server khi duyệt đơn' });
+    }
+  },
+
+  // API Cập nhật nhanh Ghi chú, Chiết khấu & Số tiền thanh toán trực tiếp tại bản in
+  quickUpdateOrder: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { note, paidAmount, discount } = req.body;
+      const newPaidAmount = Number(paidAmount);
+      const newDiscount = Number(discount) || 0;
+
+      const order = await prisma.order.findUnique({
+        where: { id: Number(id) }
+      });
+
+      if (!order) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+
+      // Phương trình bù trừ: (Nợ phát sinh mới) - (Nợ phát sinh cũ)
+      // Nợ phát sinh = Tổng hàng gốc (totalAmount) - Chiết khấu - Khách đưa
+      const oldDebtAddition = Number(order.totalAmount) - Number(order.discount) - Number(order.paidAmount);
+      const newFinalAmount = Number(order.totalAmount) - newDiscount; // Tính số tổng thu sau giảm giá mới
+      const newDebtAddition = newFinalAmount - newPaidAmount;
+      const debtAdjustment = newDebtAddition - oldDebtAddition;
+
+      await prisma.$transaction(async (tx) => {
+        // Cập nhật lại đơn hàng
+        await tx.order.update({
+          where: { id: order.id },
+          data: {
+            note: note,
+            discount: newDiscount,
+            finalAmount: newFinalAmount,
+            paidAmount: newPaidAmount
+          }
+        });
+
+        // Tăng giảm dư nợ khách hàng (Nếu debtAdjustment > 0 nghĩa là phát sinh thêm nợ, < 0 là tụt nợ)
+        if (debtAdjustment !== 0) {
+          await tx.partner.update({
+            where: { id: order.customerId },
+            data: {
+              debtBalance: {
+                increment: debtAdjustment
+              }
+            }
+          });
+        }
+      });
+
+      res.status(200).json({ message: 'Đã lưu Cập nhật In Ấn vào Hệ thống!' });
+    } catch (error) {
+      console.error("Lỗi Quick Update Đơn hàng:", error);
+      res.status(500).json({ message: 'Lỗi server khi cập nhật Đơn hàng' });
     }
   }
 };

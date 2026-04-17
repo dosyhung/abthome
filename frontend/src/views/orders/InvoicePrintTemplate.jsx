@@ -11,6 +11,53 @@ Font.register({
   ]
 });
 
+// Hàm đọc số tiền ra chữ Tiếng Việt
+const readNumberToWords = (number) => {
+  if (!number || isNaN(number) || number === 0) return 'Không đồng';
+  const numStr = Math.round(number).toString();
+  const digits = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+  const blocks = ['', 'nghìn', 'triệu', 'tỉ', 'nghìn tỉ', 'triệu tỉ'];
+
+  const readBlock3 = (n, full) => {
+    let str = '';
+    const tram = Math.floor(n / 100);
+    const chucDonvi = n % 100;
+    const chuc = Math.floor(chucDonvi / 10);
+    const donvi = chucDonvi % 10;
+
+    if (full || tram > 0) str += digits[tram] + ' trăm ';
+    if (tram > 0 && chuc === 0 && donvi > 0) str += 'lẻ ';
+    if (tram === 0 && full && chuc === 0 && donvi > 0) str += 'lẻ ';
+
+    if (chuc === 1) str += 'mười ';
+    else if (chuc > 1) str += digits[chuc] + ' mươi ';
+
+    if (chuc > 1 && donvi === 1) str += 'mốt ';
+    else if (chuc > 0 && donvi === 5) str += 'lăm ';
+    else if (donvi > 0) str += digits[donvi] + ' ';
+
+    return str;
+  };
+
+  let result = '';
+  let arr = [];
+  let tempStr = numStr;
+  while (tempStr.length > 0) {
+    arr.push(tempStr.slice(-3));
+    tempStr = tempStr.slice(0, -3);
+  }
+
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (arr[i] !== '000') {
+      let full = (i < arr.length - 1);
+      result += readBlock3(parseInt(arr[i]), full) + blocks[i] + ' ';
+    }
+  }
+
+  result = result.replace(/  +/g, ' ').trim() + ' đồng.';
+  return result.charAt(0).toUpperCase() + result.slice(1);
+};
+
 const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
   if (!orderData) return null;
 
@@ -19,7 +66,7 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
   const companyAddress = settings.print_company_address || 'KHO ĐƯỜNG TRÁNH VINH - NGHỆ AN 0396115775';
   const companyPhone = settings.print_company_phone || '0396115775';
   const invoiceTitle = settings.print_invoice_title || 'PHIẾU BÁN HÀNG';
-  const showDiscount = settings.print_show_discount === 'true' || settings.print_show_discount === true;
+  const isDiscountEnabledInSettings = settings.print_show_discount === 'true' || settings.print_show_discount === true;
   const showSignatures = settings.print_show_signatures === 'true' || settings.print_show_signatures === true;
 
   let logoUrl = settings.print_company_logo;
@@ -28,10 +75,10 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
   }
 
   const paperSize = (settings.print_paper_size || 'a4').toLowerCase();
-  
+
   // Tỷ lệ co giãn cho Khổ A5
   const isA5 = paperSize === 'a5';
-  const scale = isA5 ? 0.72 : 1; 
+  const scale = isA5 ? 0.72 : 1;
 
   // Định nghĩa CSS Vector qua StyleSheet.create
   const styles = StyleSheet.create({
@@ -129,9 +176,6 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
     },
     dottedFill: {
       flexGrow: 1,
-      borderBottomWidth: 1,
-      borderBottomStyle: 'dotted',
-      borderBottomColor: '#000',
       minHeight: 12 * scale,
     },
     // BẢNG
@@ -171,8 +215,14 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
       width: '25%',
       alignItems: 'center',
     },
+    batchText: {
+      fontSize: 8 * scale,
+      color: '#666666',
+      fontStyle: 'italic',
+      marginTop: 2 * scale,
+    },
   });
-  
+
   // Format Functions
   const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(val || 0);
   const formatDate = (dateString) => {
@@ -185,18 +235,28 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
   const customer = orderData.customer || {};
 
   const currentDebt = Number(customer.debtBalance || 0);
-  const thisOrderDebt = Number(orderData.finalAmount || 0) - Number(orderData.paidAmount || 0);
-  const oldDebt = currentDebt - thisOrderDebt;
 
-  const qrUrl = `https://img.vietqr.io/image/techcombank-19035881724013-compact2.jpg?amount=${orderData.finalAmount}&addInfo=${orderData.code}&accountName=CONG%20TY%20ABT`;
+  // Nợ Cũ Cố Định: Bằng Nợ Sổ Hiện Tại trừ đi (Tiền khách phải trả cho Hóa Đơn Trích Xuất - Tiền Đã Trả Gốc)
+  // Việc neo vào originalPaidAmount giúp Nợ Cũ không nhảy nhót khi gõ sửa Tiền Thanh Toán Ảo
+  const dbPaidAmount = orderData.originalPaidAmount !== undefined ? Number(orderData.originalPaidAmount) : Number(orderData.paidAmount || 0);
+  const thisOrderDebtInDB = Number(orderData.finalAmount || 0) - dbPaidAmount;
+  const oldDebt = currentDebt - thisOrderDebtInDB;
+
+  const dynamicDiscount = Number(orderData.discount || 0);
+  const dynamicFinalAmount = Number(orderData.totalAmount || 0) - dynamicDiscount;
+  const hasDynamicDiscount = dynamicDiscount > 0;
+
+  const finalShowDiscount = isDiscountEnabledInSettings || hasDynamicDiscount;
+
+  const qrUrl = `https://img.vietqr.io/image/techcombank-19035881724013-compact2.jpg?amount=${dynamicFinalAmount}&addInfo=${orderData.code}&accountName=CONG%20TY%20ABT`;
 
   // Thiết lập Column Width Cứng
-  const colWidths = ['4%', '12%', '30%', '10%', '8%', '6%', '12%', '6%', '12%'];
+  const colWidths = ['5%', '40%', '12%', '6%', '7%', '12%', '6%', '12%'];
 
   const DocumentComponent = (
     <Document>
       <Page size={isA5 ? 'A5' : 'A4'} orientation="portrait" style={styles.page}>
-        
+
         {/* TẦNG 1: HEADER */}
         <View style={styles.headerGrid}>
           {logoUrl ? (
@@ -244,23 +304,23 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
               <Text style={[styles.dottedFill, { fontWeight: 'bold' }]}> {customer.name || 'Khách lẻ'}</Text>
             </View>
             <View style={styles.dottedRow}>
-              <Text style={styles.dottedLabel}>Điện thoại:</Text>
+              <Text style={[styles.dottedLabel, { fontWeight: 'bold' }]}>Điện thoại:</Text>
               <Text style={styles.dottedFill}> {customer.phone || ''}</Text>
             </View>
             <View style={styles.dottedRow}>
-              <Text style={styles.dottedLabel}>Địa chỉ:</Text>
+              <Text style={[styles.dottedLabel, { fontWeight: 'bold' }]}>Địa chỉ:</Text>
               <Text style={styles.dottedFill}> {customer.address || ''}</Text>
             </View>
             <View style={styles.dottedRow}>
-              <Text style={styles.dottedLabel}>Ghi chú:</Text>
+              <Text style={[styles.dottedLabel, { fontWeight: 'bold' }]}>Ghi chú:</Text>
               <Text style={styles.dottedFill}> {orderData.note || ''}</Text>
             </View>
             <View style={styles.dottedRow}>
-              <Text style={styles.dottedLabel}>Tổng số đơn:</Text>
-              <Text style={styles.dottedFill}> </Text>
+              <Text style={[styles.dottedLabel, { fontWeight: 'bold' }]}>Tổng số đơn:</Text>
+              <Text style={styles.dottedFill}> {orderData.customerTotalOrders ? `${orderData.customerTotalOrders} Đơn` : '1 Đơn'}</Text>
             </View>
           </View>
-          
+
           <View style={styles.customerRight}>
             <View style={styles.dottedRow}>
               <Text style={styles.dottedLabel}>MKH:</Text>
@@ -282,53 +342,60 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
           {/* THEAD */}
           <View style={styles.tableHeader}>
             <View style={[styles.tableCell, { width: colWidths[0] }]}><Text style={styles.alignCenter}>TT</Text></View>
-            <View style={[styles.tableCell, { width: colWidths[1] }]}><Text style={styles.alignCenter}>Mã</Text></View>
-            <View style={[styles.tableCell, { width: colWidths[2] }]}><Text>Tên hàng</Text></View>
-            <View style={[styles.tableCell, { width: colWidths[3] }]}><Text>Ghi chú</Text></View>
-            <View style={[styles.tableCell, { width: colWidths[4] }]}><Text style={styles.alignCenter}>ĐVT</Text></View>
-            <View style={[styles.tableCell, { width: colWidths[5] }]}><Text style={styles.alignCenter}>SL</Text></View>
-            <View style={[styles.tableCell, { width: colWidths[6] }]}><Text style={styles.alignRight}>Đơn giá</Text></View>
-            <View style={[styles.tableCell, { width: colWidths[7] }]}><Text style={styles.alignCenter}>CK(%)</Text></View>
-            <View style={[styles.tableCell, { width: colWidths[8], borderRightWidth: 0 }]}><Text style={styles.alignRight}>Thành tiền</Text></View>
+            <View style={[styles.tableCell, { width: colWidths[1] }]}><Text>Tên hàng</Text></View>
+            <View style={[styles.tableCell, { width: colWidths[2] }]}><Text>Ghi chú</Text></View>
+            <View style={[styles.tableCell, { width: colWidths[3] }]}><Text style={styles.alignCenter}>ĐVT</Text></View>
+            <View style={[styles.tableCell, { width: colWidths[4] }]}><Text style={styles.alignCenter}>SL</Text></View>
+            <View style={[styles.tableCell, { width: colWidths[5] }]}><Text style={styles.alignRight}>Đơn giá</Text></View>
+            <View style={[styles.tableCell, { width: colWidths[6] }]}><Text style={styles.alignCenter}>CK (đ)</Text></View>
+            <View style={[styles.tableCell, { width: colWidths[7], borderRightWidth: 0 }]}><Text style={styles.alignRight}>Thành tiền</Text></View>
           </View>
 
           {/* TBODY */}
-          {items.map((item, idx) => (
-            <View key={idx} style={styles.tableRow} wrap={false}>
-              <View style={[styles.tableCell, { width: colWidths[0] }]}><Text style={styles.alignCenter}>{idx + 1}</Text></View>
-              <View style={[styles.tableCell, { width: colWidths[1] }]}><Text style={styles.alignCenter}>{item.productVariant?.sku || item.variantId}</Text></View>
-              <View style={[styles.tableCell, { width: colWidths[2] }]}>
-                <Text>{item.productVariant?.product?.name || 'Sản phẩm'} - {item.productVariant?.name}</Text>
-                {item.note ? <Text style={{ fontStyle: 'italic', fontSize: 8 * scale }}>{item.note}</Text> : null}
+          {items.map((item, idx) => {
+            // Lấy giá Niêm yết Gốc (nếu có)
+            const sellPrice = Number(item.productVariant?.sellPrice) || Number(item.price);
+
+            // Tiền chiết khấu = Mức Giá Niêm yết - Giá thu thực (Nếu âm hoặc không có thì coi như = 0)
+            const discountAmount = Math.max(sellPrice - Number(item.price), 0);
+
+            return (
+              <View key={idx} style={styles.tableRow} wrap={false}>
+                <View style={[styles.tableCell, { width: colWidths[0] }]}><Text style={styles.alignCenter}>{idx + 1}</Text></View>
+                <View style={[styles.tableCell, { width: colWidths[1], flexDirection: 'column' }]}>
+                  <Text>{item.name || 'Sản phẩm'} {item.productVariant?.name ? `- ${item.productVariant.name}` : ''}</Text>
+                  {item.batchNumber ? <Text style={styles.batchText}>Lô: {item.batchNumber}</Text> : null}
+                  {item.note ? <Text style={{ fontStyle: 'italic', fontSize: 8 * scale }}>{item.note}</Text> : null}
+                </View>
+                <View style={[styles.tableCell, { width: colWidths[2] }]}><Text></Text></View>
+                <View style={[styles.tableCell, { width: colWidths[3] }]}><Text style={styles.alignCenter}>Thanh</Text></View>
+                <View style={[styles.tableCell, { width: colWidths[4] }]}><Text style={styles.alignCenter}>{item.quantity}</Text></View>
+                <View style={[styles.tableCell, { width: colWidths[5] }]}><Text style={styles.alignRight}>{formatCurrency(item.price)}</Text></View>
+                <View style={[styles.tableCell, { width: colWidths[6] }]}><Text style={styles.alignCenter}>{formatCurrency(discountAmount)}</Text></View>
+                <View style={[styles.tableCell, { width: colWidths[7], borderRightWidth: 0 }]}><Text style={styles.alignRight}>{formatCurrency(item.quantity * item.price)}</Text></View>
               </View>
-              <View style={[styles.tableCell, { width: colWidths[3] }]}><Text></Text></View>
-              <View style={[styles.tableCell, { width: colWidths[4] }]}><Text style={styles.alignCenter}>Thanh</Text></View>
-              <View style={[styles.tableCell, { width: colWidths[5] }]}><Text style={styles.alignCenter}>{item.quantity}</Text></View>
-              <View style={[styles.tableCell, { width: colWidths[6] }]}><Text style={styles.alignRight}>{formatCurrency(item.price)}</Text></View>
-              <View style={[styles.tableCell, { width: colWidths[7] }]}><Text style={styles.alignCenter}>0</Text></View>
-              <View style={[styles.tableCell, { width: colWidths[8], borderRightWidth: 0 }]}><Text style={styles.alignRight}>{formatCurrency(item.quantity * item.price)}</Text></View>
-            </View>
-          ))}
+            );
+          })}
 
           {/* NO DATA ROW */}
           {items.length === 0 && (
-             <View style={styles.tableRow} wrap={false}>
-               <View style={[styles.tableCell, { width: '100%', borderRightWidth: 0 }]}>
-                 <Text style={[styles.alignCenter, { fontStyle: 'italic', paddingVertical: 10 * scale }]}>Chưa có sản phẩm</Text>
-               </View>
-             </View>
+            <View style={styles.tableRow} wrap={false}>
+              <View style={[styles.tableCell, { width: '100%', borderRightWidth: 0 }]}>
+                <Text style={[styles.alignCenter, { fontStyle: 'italic', paddingVertical: 10 * scale }]}>Chưa có sản phẩm</Text>
+              </View>
+            </View>
           )}
 
           {/* FOOTER TOTALS */}
-          {showDiscount && (
+          {finalShowDiscount && (
             <View style={styles.tableRow} wrap={false}>
               <View style={[styles.tableCell, { width: '88%' }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>TỔNG TIỀN CHIẾT KHẤU </Text></View>
-              <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>{formatCurrency(orderData.discount)}</Text></View>
+              <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>{formatCurrency(dynamicDiscount)}</Text></View>
             </View>
           )}
           <View style={styles.tableRow} wrap={false}>
             <View style={[styles.tableCell, { width: '88%' }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>TỔNG HOÁ ĐƠN </Text></View>
-            <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>{formatCurrency(orderData.totalAmount)}</Text></View>
+            <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>{formatCurrency(dynamicFinalAmount)}</Text></View>
           </View>
           <View style={styles.tableRow} wrap={false}>
             <View style={[styles.tableCell, { width: '88%' }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>NỢ CŨ </Text></View>
@@ -340,14 +407,14 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
           </View>
           <View style={[styles.tableRow, { borderBottomWidth: 0 }]} wrap={false}>
             <View style={[styles.tableCell, { width: '88%' }]}><Text style={[styles.alignRight, { fontWeight: 'bold', fontSize: 11 * scale }]}>TỔNG TIỀN PHẢI TRẢ </Text></View>
-            <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold', fontSize: 11 * scale }]}>{formatCurrency(oldDebt + Number(orderData.totalAmount) - Number(orderData.paidAmount))}</Text></View>
+            <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold', fontSize: 11 * scale }]}>{formatCurrency(oldDebt + dynamicFinalAmount - Number(orderData.paidAmount))}</Text></View>
           </View>
         </View>
 
         {/* TIỀN CHỮ */}
         <View style={[styles.dottedRow, { marginTop: 10 * scale }]} wrap={false}>
-          <Text style={{ fontStyle: 'italic' }}>Tổng số tiền viết bằng chữ:  </Text>
-          <Text style={styles.dottedFill}> </Text>
+          <Text style={{ fontStyle: 'italic', fontWeight: 'bold' }}>Tổng số tiền viết bằng chữ: </Text>
+          <Text style={[styles.dottedFill, { fontStyle: 'italic', marginLeft: 5 * scale }]}>{readNumberToWords(oldDebt + dynamicFinalAmount - Number(orderData.paidAmount))}</Text>
         </View>
 
         {/* CHỮ KÝ */}

@@ -19,10 +19,12 @@ import {
   CModalHeader,
   CModalTitle,
   CModalBody,
-  CModalFooter
+  CModalFooter,
+  CFormInput,
+  CFormTextarea
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilPlus, cilPrint, cilTrash, cilList } from '@coreui/icons'
+import { cilPlus, cilPrint, cilTrash, cilList, cilWarning } from '@coreui/icons'
 import InvoicePrintTemplate from './InvoicePrintTemplate'
 import axiosClient from '../../api/axiosClient'
 
@@ -31,6 +33,17 @@ import axiosClient from '../../api/axiosClient'
 // ===============================================
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0)
+}
+
+const formatInputCurrency = (val) => {
+  if (val === 0) return ''
+  if (!val) return ''
+  return new Intl.NumberFormat('vi-VN').format(val)
+}
+
+const parseInputCurrency = (val) => {
+  const cleanStr = val.toString().replace(/\D/g, '')
+  return cleanStr ? Number(cleanStr) : 0
 }
 
 const formatDate = (dateString) => {
@@ -91,7 +104,10 @@ const OrderList = () => {
     try {
       const orderRes = await axiosClient.get(`/orders/${orderSummary.id}`)
       if (orderRes && orderRes.data) {
-        setPrintData(orderRes.data)
+        setPrintData({
+          ...orderRes.data,
+          originalPaidAmount: orderRes.data.paidAmount
+        })
         setShowPrintModal(true)
       } else {
         alert("Không tải được chi tiết đơn hàng")
@@ -99,6 +115,30 @@ const OrderList = () => {
     } catch (error) {
       console.error("Error fetching order detail", error)
       alert("Lỗi tải chi tiết đơn hàng")
+    }
+  }
+
+  // Cập nhật Nhanh (Lưu vào DB Dữ liệu in ảo)
+  const handleQuickUpdateOrder = async () => {
+    try {
+      if (!printData) return;
+      await axiosClient.patch(`/orders/${printData.id}/quick-update`, {
+        note: printData.note,
+        paidAmount: printData.paidAmount,
+        discount: printData.discount
+      });
+      addToast(
+        <CToast color="success" className="text-white align-items-center">
+          <CToastHeader closeButton>
+            <strong className="me-auto">Thành công</strong>
+          </CToastHeader>
+          <CToastBody>Đã lưu Cập nhật In Ấn vào Hệ thống!</CToastBody>
+        </CToast>
+      );
+      fetchOrders(); // Reload background data
+    } catch (e) {
+      console.error(e);
+      alert('Lỗi cập nhật ' + (e.response?.data?.message || e.message));
     }
   }
 
@@ -237,15 +277,55 @@ const OrderList = () => {
       {/* Component In PDF Modal */}
       <CModal size="xl" visible={showPrintModal} onClose={() => { setShowPrintModal(false); setPrintData(null); }} alignment="center">
         <CModalHeader>
-          <CModalTitle>Xem trước Hóa Đơn (PDF)</CModalTitle>
+          <CModalTitle>Xem và In Hóa Đơn (PDF)</CModalTitle>
         </CModalHeader>
-        <CModalBody style={{ height: '85vh', padding: 0 }}>
-          {printData && (
-            <InvoicePrintTemplate 
-              orderData={printData} 
-              settings={printSettings} 
-            />
-          )}
+        <CModalBody style={{ height: '85vh', padding: 0, display: 'flex' }}>
+          {/* Bảng Điều Khiển Sửa Nhanh */}
+          <div style={{ width: '320px', backgroundColor: '#f8f9fa', padding: '20px', borderRight: '1px solid #ddd', overflowY: 'auto' }}>
+            <h5 className="mb-4 text-primary">Chỉnh Sửa Nhanh</h5>
+            <div className="mb-3">
+              <label className="form-label fw-bold">Chiết khấu (VNĐ)</label>
+              <CFormInput 
+                type="text"
+                className="text-end"
+                value={formatInputCurrency(printData?.discount)}
+                onChange={(e) => setPrintData({...printData, discount: parseInputCurrency(e.target.value)})}
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label fw-bold">Khách đưa (Thanh toán)</label>
+              <CFormInput 
+                type="text"
+                className="text-end"
+                value={formatInputCurrency(printData?.paidAmount)}
+                onChange={(e) => setPrintData({...printData, paidAmount: parseInputCurrency(e.target.value)})}
+              />
+            </div>
+            <div className="mb-4">
+              <label className="form-label fw-bold">Ghi chú in</label>
+              <CFormTextarea 
+                rows={4}
+                value={printData?.note || ''}
+                onChange={(e) => setPrintData({...printData, note: e.target.value})}
+              />
+            </div>
+            <CButton color="primary" size="lg" className="w-100 mb-3" onClick={handleQuickUpdateOrder}>
+              LƯU VÀO SỔ NỢ
+            </CButton>
+            <div className="text-muted small">
+              <CIcon icon={cilWarning} className="me-1" />
+              Mẹo: Các ô trên có tác dụng cập nhật chữ trực tiếp lên Hóa Đơn bên phải theo Thời Gian Thực. Bấm Lưu để chốt ghi đè vào Hệ thống CSDL.
+            </div>
+          </div>
+
+          <div style={{ flex: 1, height: '100%' }}>
+            {printData && (
+              <InvoicePrintTemplate 
+                orderData={printData} 
+                settings={printSettings} 
+              />
+            )}
+          </div>
         </CModalBody>
       </CModal>
 

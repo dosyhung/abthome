@@ -25,7 +25,8 @@ import {
   CModalHeader,
   CModalTitle,
   CModalBody,
-  CModalFooter
+  CModalFooter,
+  CFormTextarea
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilTrash, cilSearch, cilCart, cilUser, cilWarning, cilPlus } from '@coreui/icons'
@@ -40,6 +41,16 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0)
 }
 
+const formatInputCurrency = (val) => {
+  if (val === 0) return ''
+  if (!val) return ''
+  return new Intl.NumberFormat('vi-VN').format(val)
+}
+
+const parseInputCurrency = (val) => {
+  const cleanStr = val.toString().replace(/\D/g, '')
+  return cleanStr ? Number(cleanStr) : 0
+}
 // ===============================================
 // MAIN COMPONENT
 // ===============================================
@@ -126,6 +137,7 @@ const CreateOrder = () => {
   // --- STATE: THANH TOÁN ---
   const [discount, setDiscount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState('CASH') // CASH, BANK_TRANSFER
+  const [orderNote, setOrderNote] = useState('')
 
   // --- LOGIC: TÌM KIẾM SẢN PHẨM ---
   const handleSearch = (e) => {
@@ -169,7 +181,8 @@ const CreateOrder = () => {
           variant: variant,
           quantity: 1,
           batchId: '', // Default trống
-          price: variant.sellPrice
+          price: variant.sellPrice,
+          itemDiscount: 0
         }
       ])
     }
@@ -194,7 +207,7 @@ const CreateOrder = () => {
 
   // --- TÍNH TOÁN ---
   const totalAmount = useMemo(() => {
-    return cartItems.reduce((sum, item) => sum + (Number(item.quantity) * Number(item.price)), 0)
+    return cartItems.reduce((sum, item) => sum + (Number(item.price) - Number(item.itemDiscount || 0)) * Number(item.quantity), 0)
   }, [cartItems])
 
   const finalAmount = Math.max(totalAmount - Number(discount), 0)
@@ -217,18 +230,19 @@ const CreateOrder = () => {
 
     const payload = {
       customerId: parseInt(customerId),
-      userId: user?.id, 
+      userId: user?.id,
       totalAmount,
       discount: Number(discount),
       finalAmount,
       paidAmount: finalAmount, // Mặc định thu đủ tiền khách đưa (POS)
       status: 'PENDING',
       paymentMethod,
+      note: orderNote,
       items: cartItems.map(i => ({
         variantId: i.variant.id,
         batchId: i.batchId ? parseInt(i.batchId) : null,
         quantity: parseInt(i.quantity),
-        price: parseFloat(i.price)
+        price: parseFloat(i.price) - parseFloat(i.itemDiscount || 0)
       }))
     }
 
@@ -237,10 +251,11 @@ const CreateOrder = () => {
     try {
       const response = await axiosClient.post('/orders', payload)
       const newOrderId = response.data?.data?.id
-      
+
       // Nạp thành công
       setCartItems([])
       setDiscount(0)
+      setOrderNote('')
       setSearchTerm('')
       fetchInitData() // Kéo lại kho
       alert("Chốt đơn thành công!")
@@ -252,7 +267,10 @@ const CreateOrder = () => {
             axiosClient.get(`/orders/${newOrderId}`),
             axiosClient.get('/settings')
           ]);
-          setPrintData(orderRes.data);
+          setPrintData({
+            ...orderRes.data,
+            originalPaidAmount: orderRes.data.paidAmount
+          });
           setPrintSettings(settingsRes);
           setShowPrintModal(true); // Mở Modal In
         } catch (fetchErr) {
@@ -263,6 +281,22 @@ const CreateOrder = () => {
     } catch (err) {
       console.error('Lỗi Check out:', err)
       alert(err.response?.data?.message || 'Có lỗi khi tạo đơn')
+    }
+  }
+
+  // Cập nhật Nhanh (Lưu vào DB Dữ liệu in ảo)
+  const handleQuickUpdateOrder = async () => {
+    try {
+      if (!printData) return;
+      await axiosClient.patch(`/orders/${printData.id}/quick-update`, {
+        note: printData.note,
+        paidAmount: printData.paidAmount,
+        discount: printData.discount
+      });
+      alert('Đã lưu Cập nhật In Ấn vào Hệ thống Công Nợ!');
+    } catch (e) {
+      console.error(e);
+      alert('Lỗi cập nhật ' + (e.response?.data?.message || e.message));
     }
   }
 
@@ -355,8 +389,9 @@ const CreateOrder = () => {
                     <CTableHeaderCell style={{ width: '30%' }}>Mặt hàng (Mã SP)</CTableHeaderCell>
                     <CTableHeaderCell style={{ width: '15%' }}>Giá bán</CTableHeaderCell>
                     <CTableHeaderCell style={{ width: '15%' }}>Số lượng</CTableHeaderCell>
-                    <CTableHeaderCell style={{ width: '15%' }}>Chiết Lô (Batch)</CTableHeaderCell>
-                    <CTableHeaderCell style={{ width: '15%' }} className="text-end">Thành tiền</CTableHeaderCell>
+                    <CTableHeaderCell style={{ width: '15%' }}>Số Lô</CTableHeaderCell>
+                    <CTableHeaderCell style={{ width: '12%' }}>Chiết khấu (VND)</CTableHeaderCell>
+                    <CTableHeaderCell style={{ width: '13%' }} className="text-end">Thành tiền</CTableHeaderCell>
                     <CTableHeaderCell style={{ width: '5%' }} className="text-center"></CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
@@ -383,10 +418,11 @@ const CreateOrder = () => {
                           </CTableDataCell>
                           <CTableDataCell>
                             <CFormInput
-                              type="number"
+                              type="text"
                               size="sm"
-                              value={item.price}
-                              onChange={(e) => handleCartChange(item.id, 'price', e.target.value)}
+                              className="text-end"
+                              value={formatInputCurrency(item.price)}
+                              onChange={(e) => handleCartChange(item.id, 'price', parseInputCurrency(e.target.value))}
                             />
                           </CTableDataCell>
                           <CTableDataCell>
@@ -412,8 +448,17 @@ const CreateOrder = () => {
                               ))}
                             </CFormSelect>
                           </CTableDataCell>
+                          <CTableDataCell>
+                            <CFormInput
+                              type="text"
+                              size="sm"
+                              className="text-end"
+                              value={formatInputCurrency(item.itemDiscount)}
+                              onChange={(e) => handleCartChange(item.id, 'itemDiscount', parseInputCurrency(e.target.value))}
+                            />
+                          </CTableDataCell>
                           <CTableDataCell className="text-end fw-semibold">
-                            {formatCurrency(lineTotal)}
+                            {formatCurrency((Number(item.price) - Number(item.itemDiscount || 0)) * item.quantity)}
                           </CTableDataCell>
                           <CTableDataCell className="text-center">
                             <CButton color="danger" variant="ghost" size="sm" onClick={() => removeFromCart(item.id)}>
@@ -442,10 +487,9 @@ const CreateOrder = () => {
                       <span className="fw-semibold">Giảm giá Đơn hàng:</span>
                       <CInputGroup style={{ width: '150px' }} size="sm">
                         <CFormInput
-                          type="number"
-                          min="0"
-                          value={discount}
-                          onChange={(e) => setDiscount(e.target.value)}
+                          type="text"
+                          value={formatInputCurrency(discount)}
+                          onChange={(e) => setDiscount(parseInputCurrency(e.target.value))}
                           className="text-end"
                         />
                         <CInputGroupText>đ</CInputGroupText>
@@ -464,6 +508,16 @@ const CreateOrder = () => {
                         <option value="BANK_TRANSFER">Chuyển khoản</option>
                         <option value="CARD">Quẹt thẻ</option>
                       </CFormSelect>
+                    </div>
+
+                    <div className="mb-3">
+                      <span className="fw-semibold d-block mb-1">Ghi chú đơn hàng:</span>
+                      <CFormTextarea
+                        rows={2}
+                        placeholder="VD: Nhớ bọc chống sốc kỹ..."
+                        value={orderNote}
+                        onChange={(e) => setOrderNote(e.target.value)}
+                      />
                     </div>
 
                     <hr />
@@ -548,13 +602,57 @@ const CreateOrder = () => {
         <CModalHeader>
           <CModalTitle>Xem và In Hóa Đơn (PDF Viewer)</CModalTitle>
         </CModalHeader>
-        <CModalBody style={{ height: '85vh', padding: 0 }}>
-          {printData && (
-            <InvoicePrintTemplate 
-              orderData={printData} 
-              settings={printSettings} 
-            />
-          )}
+        <CModalBody style={{ height: '85vh', padding: 0, display: 'flex' }}>
+
+          {/* Bảng Điều Khiển Sửa Nhanh */}
+          <div style={{ width: '320px', backgroundColor: '#f8f9fa', padding: '20px', borderRight: '1px solid #ddd', overflowY: 'auto' }}>
+            <h5 className="mb-4 text-primary">Chỉnh Sửa Nhanh</h5>
+            <div className="mb-3">
+              <label className="form-label fw-bold d-flex justify-content-between">
+                <span>Chiết khấu (VNĐ)</span>
+              </label>
+              <CFormInput
+                type="text"
+                className="text-end"
+                value={formatInputCurrency(printData?.discount)}
+                onChange={(e) => setPrintData({ ...printData, discount: parseInputCurrency(e.target.value) })}
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label fw-bold">Khách đưa (Thanh toán)</label>
+              <CFormInput
+                type="text"
+                className="text-end"
+                value={formatInputCurrency(printData?.paidAmount)}
+                onChange={(e) => setPrintData({ ...printData, paidAmount: parseInputCurrency(e.target.value) })}
+              />
+            </div>
+            <div className="mb-4">
+              <label className="form-label fw-bold">Ghi chú in</label>
+              <CFormTextarea
+                rows={4}
+                value={printData?.note || ''}
+                onChange={(e) => setPrintData({ ...printData, note: e.target.value })}
+              />
+            </div>
+            <CButton color="primary" size="lg" className="w-100 mb-3" onClick={handleQuickUpdateOrder}>
+              LƯU VÀO SỔ NỢ
+            </CButton>
+            <div className="text-muted small">
+              <CIcon icon={cilWarning} className="me-1" />
+              Mẹo: Các ô trên có tác dụng cập nhật chữ trực tiếp lên Hóa Đơn bên phải theo Thời Gian Thực. Bấm Lưu để chốt ghi đè vào Hệ thống CSDL.
+            </div>
+          </div>
+
+          <div style={{ flex: 1, height: '100%' }}>
+            {printData && (
+              <InvoicePrintTemplate
+                orderData={printData}
+                settings={printSettings}
+              />
+            )}
+          </div>
+
         </CModalBody>
       </CModal>
 
