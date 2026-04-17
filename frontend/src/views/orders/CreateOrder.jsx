@@ -28,7 +28,8 @@ import {
   CModalFooter
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilTrash, cilSearch, cilCart, cilUser, cilWarning } from '@coreui/icons'
+import { cilTrash, cilSearch, cilCart, cilUser, cilWarning, cilPlus } from '@coreui/icons'
+import InvoicePrintTemplate from './InvoicePrintTemplate'
 
 // Data sẽ lấy từ API
 
@@ -59,6 +60,11 @@ const CreateOrder = () => {
   // --- STATE: CẢNH BÁO TỒN KHO ---
   const [showStockWarning, setShowStockWarning] = useState(false)
   const [warningMessage, setWarningMessage] = useState('')
+
+  // ----- STATE IN ẤN (PDF) CHỐT ĐƠN -----
+  const [showPrintModal, setShowPrintModal] = useState(false)
+  const [printData, setPrintData] = useState(null)
+  const [printSettings, setPrintSettings] = useState({})
 
   useEffect(() => {
     fetchInitData()
@@ -230,12 +236,30 @@ const CreateOrder = () => {
 
     try {
       const response = await axiosClient.post('/orders', payload)
+      const newOrderId = response.data?.data?.id
+      
       // Nạp thành công
       setCartItems([])
       setDiscount(0)
       setSearchTerm('')
       fetchInitData() // Kéo lại kho
       alert("Chốt đơn thành công!")
+
+      // Hiển thị trực tiếp màn hình In Hóa Đơn PDF (CÁCH 2)
+      if (newOrderId) {
+        try {
+          const [orderRes, settingsRes] = await Promise.all([
+            axiosClient.get(`/orders/${newOrderId}`),
+            axiosClient.get('/settings')
+          ]);
+          setPrintData(orderRes.data);
+          setPrintSettings(settingsRes);
+          setShowPrintModal(true); // Mở Modal In
+        } catch (fetchErr) {
+          console.error("Không tải được dữ liệu in hóa đơn:", fetchErr);
+        }
+      }
+
     } catch (err) {
       console.error('Lỗi Check out:', err)
       alert(err.response?.data?.message || 'Có lỗi khi tạo đơn')
@@ -517,6 +541,21 @@ const CreateOrder = () => {
             QUAY LẠI
           </CButton>
         </CModalFooter>
+      </CModal>
+
+      {/* MODAL IN HÓA ĐƠN PDF TỰ ĐỘNG - GIAO DIỆN VIEW & IN TRỰC TIẾP */}
+      <CModal size="xl" visible={showPrintModal} onClose={() => { setShowPrintModal(false); setPrintData(null); }} alignment="center">
+        <CModalHeader>
+          <CModalTitle>Xem và In Hóa Đơn (PDF Viewer)</CModalTitle>
+        </CModalHeader>
+        <CModalBody style={{ height: '85vh', padding: 0 }}>
+          {printData && (
+            <InvoicePrintTemplate 
+              orderData={printData} 
+              settings={printSettings} 
+            />
+          )}
+        </CModalBody>
       </CModal>
 
     </CRow>

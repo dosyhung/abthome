@@ -23,7 +23,6 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilPlus, cilPrint, cilTrash, cilList } from '@coreui/icons'
-import { useReactToPrint } from 'react-to-print'
 import InvoicePrintTemplate from './InvoicePrintTemplate'
 import axiosClient from '../../api/axiosClient'
 
@@ -75,14 +74,9 @@ const OrderList = () => {
   const [selectedOrderToApprove, setSelectedOrderToApprove] = useState(null)
 
   // -- LOGIC IN ẤN --
+  const [showPrintModal, setShowPrintModal] = useState(false)
   const [printData, setPrintData] = useState(null)
   const [printSettings, setPrintSettings] = useState({})
-  const printComponentRef = useRef()
-
-  const handlePrint = useReactToPrint({
-    contentRef: printComponentRef,
-    onAfterPrint: () => setPrintData(null),
-  })
 
   const onPrintClick = async (orderSummary) => {
     // 1. Fetch settings
@@ -98,9 +92,7 @@ const OrderList = () => {
       const orderRes = await axiosClient.get(`/orders/${orderSummary.id}`)
       if (orderRes && orderRes.data) {
         setPrintData(orderRes.data)
-        setTimeout(() => {
-          handlePrint();
-        }, 150)
+        setShowPrintModal(true)
       } else {
         alert("Không tải được chi tiết đơn hàng")
       }
@@ -242,16 +234,20 @@ const OrderList = () => {
         )}
       </CCardBody>
 
-      {/* Component In Ẩn */}
-      <div style={{ position: 'absolute', top: '-10000px', left: '-10000px' }}>
-        {printData && (
-          <InvoicePrintTemplate 
-            ref={printComponentRef} 
-            orderData={printData} 
-            settings={printSettings} 
-          />
-        )}
-      </div>
+      {/* Component In PDF Modal */}
+      <CModal size="xl" visible={showPrintModal} onClose={() => { setShowPrintModal(false); setPrintData(null); }} alignment="center">
+        <CModalHeader>
+          <CModalTitle>Xem trước Hóa Đơn (PDF)</CModalTitle>
+        </CModalHeader>
+        <CModalBody style={{ height: '85vh', padding: 0 }}>
+          {printData && (
+            <InvoicePrintTemplate 
+              orderData={printData} 
+              settings={printSettings} 
+            />
+          )}
+        </CModalBody>
+      </CModal>
 
     </CCard>
       
