@@ -1,0 +1,294 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+// KHÔNG CÓ dòng url ở đây nữa, vì đã được quản lý ở prisma.config.ts (Đã được khôi phục dùng .env)
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// 1. QUẢN LÝ NGƯỜI DÙNG & PHÂN QUYỀN
+// ==========================================
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  fullName  String
+  phone     String?
+  avatar    String?
+  isActive  Boolean  @default(true)
+  roleId    Int
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  orders      Order[]
+  inventories InventoryTransaction[]
+  stocktakes  Stocktake[]
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique 
+  permissions Json     // Lưu mảng quyền dạng JSON (Dành cho MySQL)
+  users       User[]
+}
+
+// ==========================================
+// 2. DANH MỤC SẢN PHẨM & BIẾN THỂ
+// ==========================================
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    
+  description String?
+  products    Product[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique 
+  name        String   
+  description String?
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  variants    ProductVariant[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductVariant {
+  id            Int      @id @default(autoincrement())
+  sku           String   @unique 
+  productId     Int
+  product       Product  @relation(fields: [productId], references: [id])
+  
+  attributes    Json     
+  importPrice   Decimal  @db.Decimal(15, 2) 
+  sellPrice     Decimal  @db.Decimal(15, 2) 
+  stockCount    Int      @default(0)        
+  minStockLevel Int      @default(5) 
+  
+  orderItems       OrderItem[]
+  inventoryItems   InventoryDetail[]
+  batches          Batch[]
+  stocktakeDetails StocktakeDetail[]
+}
+
+// ==========================================
+// 3. QUẢN LÝ LÔ HÀNG (BATCH) & DATE
+// ==========================================
+model Batch {
+  id          Int      @id @default(autoincrement())
+  batchNumber String   
+  mfgDate     DateTime? 
+  expiryDate  DateTime? 
+  
+  variantId   Int
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+  
+  initialQty  Int      
+  currentQty  Int      
+  importPrice Decimal  @db.Decimal(15, 2)
+  createdAt   DateTime @default(now())
+
+  inventoryDetails InventoryDetail[]
+  orderItems       OrderItem[]
+  stocktakeDetails StocktakeDetail[]
+
+  @@unique([batchNumber, variantId]) 
+}
+
+// ==========================================
+// 4. ĐỐI TÁC (KHÁCH HÀNG & NHÀ CUNG CẤP)
+// ==========================================
+model Partner {
+  id          Int      @id @default(autoincrement())
+  type        PartnerType 
+  name        String
+  phone       String   @unique
+  address     String?
+  taxCode     String?  
+  debtBalance Decimal  @default(0) @db.Decimal(15, 2) 
+  
+  orders      Order[]
+  inventories InventoryTransaction[]
+  payments    Payment[]
+}
+
+enum PartnerType {
+  CUSTOMER
+  SUPPLIER
+}
+
+// ==========================================
+// 5. GIAO DỊCH KHO (NHẬP/XUẤT & KIỂM KÊ)
+// ==========================================
+model InventoryTransaction {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique 
+  type        TransactionType 
+  status      Status   @default(PENDING) 
+  userId      Int      
+  user        User     @relation(fields: [userId], references: [id])
+  partnerId   Int?     
+  partner     Partner? @relation(fields: [partnerId], references: [id])
+  note        String?
+  totalAmount Decimal  @default(0) @db.Decimal(15, 2)
+  paidAmount  Decimal  @default(0) @db.Decimal(15, 2)
+  createdAt   DateTime @default(now())
+  
+  details     InventoryDetail[]
+  payments    Payment[]
+}
+
+enum TransactionType {
+  IMPORT 
+  EXPORT 
+}
+
+model InventoryDetail {
+  id            Int      @id @default(autoincrement())
+  transactionId Int
+  transaction   InventoryTransaction @relation(fields: [transactionId], references: [id])
+  variantId     Int
+  variant       ProductVariant       @relation(fields: [variantId], references: [id])
+  
+  batchId       Int?     
+  batch         Batch?   @relation(fields: [batchId], references: [id])
+  
+  quantity      Int
+  unitPrice     Decimal  @db.Decimal(15, 2) 
+}
+
+model Stocktake {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique 
+  userId      Int       
+  user        User      @relation(fields: [userId], references: [id])
+  status      StocktakeStatus @default(DRAFT) 
+  note        String?
+  createdAt   DateTime  @default(now())
+  
+  details     StocktakeDetail[]
+}
+
+model StocktakeDetail {
+  id          Int       @id @default(autoincrement())
+  stocktakeId Int
+  stocktake   Stocktake @relation(fields: [stocktakeId], references: [id])
+  variantId   Int
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+  batchId     Int?
+  batch       Batch?    @relation(fields: [batchId], references: [id])
+  
+  systemQty   Int       
+  actualQty   Int       
+  adjustment  Int       
+}
+
+enum StocktakeStatus {
+  DRAFT
+  ADJUSTED 
+}
+
+// ==========================================
+// 6. BÁN HÀNG, VẬN CHUYỂN & DÒNG TIỀN
+// ==========================================
+model Order {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique 
+  customerId  Int
+  customer    Partner  @relation(fields: [customerId], references: [id])
+  userId      Int      
+  user        User     @relation(fields: [userId], references: [id])
+  
+  totalAmount Decimal  @db.Decimal(15, 2) 
+  discount    Decimal  @default(0) @db.Decimal(15, 2)
+  finalAmount Decimal  @db.Decimal(15, 2) 
+  paidAmount  Decimal  @default(0) @db.Decimal(15, 2)
+  status      OrderStatus @default(PROCESSING)
+  
+  createdAt   DateTime @default(now())
+  
+  items       OrderItem[]
+  payments    Payment[]   
+  shipping    Shipping?
+}
+
+enum OrderStatus {
+  PROCESSING 
+  SHIPPED    
+  DELIVERED  
+  CANCELLED  
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  order     Order    @relation(fields: [orderId], references: [id])
+  variantId Int
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  
+  batchId   Int?
+  batch     Batch?   @relation(fields: [batchId], references: [id])
+  
+  quantity  Int
+  price     Decimal  @db.Decimal(15, 2) 
+}
+
+model Shipping {
+  id            Int      @id @default(autoincrement())
+  orderId       Int      @unique
+  order         Order    @relation(fields: [orderId], references: [id])
+  carrierName   String   
+  trackingNumber String? 
+  shippingFee   Decimal  @db.Decimal(15, 2)
+  status        ShipStatus @default(PENDING)
+  expectedDate  DateTime?
+  shippedDate   DateTime?
+}
+
+enum ShipStatus {
+  PENDING
+  IN_TRANSIT
+  DELIVERED
+  RETURNED
+}
+
+model Payment {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique 
+  type        PaymentType 
+  amount      Decimal  @db.Decimal(15, 2)
+  partnerId   Int?     
+  partner     Partner? @relation(fields: [partnerId], references: [id])
+  orderId     Int?     
+  order       Order?   @relation(fields: [orderId], references: [id])
+  inventoryTransactionId Int?
+  inventory   InventoryTransaction? @relation(fields: [inventoryTransactionId], references: [id])
+  method      String   
+  note        String?
+  createdAt   DateTime @default(now())
+}
+
+enum PaymentType {
+  INCOME  
+  EXPENSE 
+}
+
+enum Status {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+// ==========================================
+// 7. CẤU HÌNH HỆ THỐNG
+// ==========================================
+model SystemSetting {
+  key   String @id
+  value String @db.Text
+}
