@@ -24,7 +24,8 @@ import {
   Buildings,
   Money,
   Bank,
-  Gear
+  Gear,
+  Image
 } from '@phosphor-icons/react'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
@@ -144,7 +145,7 @@ const _nav = [
   },
   {
     component: CNavTitle,
-    name: 'Hệ Thống',
+    name: 'Quản Lý Nhân Sự',
   },
   {
     component: CNavItem,
@@ -153,10 +154,27 @@ const _nav = [
     icon: <Users size={24} weight="duotone" className="nav-icon text-info" />,
   },
   {
-    component: CNavItem,
-    name: 'Cấu Hình In Ấn',
-    to: '/settings/print',
+    component: CNavTitle,
+    name: 'Quản Lý Hệ Thống',
+  },
+  {
+    component: CNavGroup,
+    name: 'Cấu Hình Hệ Thống',
     icon: <Gear size={24} weight="duotone" className="nav-icon text-secondary" />,
+    items: [
+      {
+        component: CNavItem,
+        name: 'Cấu Hình In Ấn',
+        to: '/settings/print',
+        icon: <Gear size={20} weight="duotone" className="nav-icon text-secondary" style={{ opacity: 0.8 }} />,
+      },
+      {
+        component: CNavItem,
+        name: 'Cài Đặt Logo App',
+        to: '/settings/logo',
+        icon: <Image size={20} weight="duotone" className="nav-icon text-secondary" style={{ opacity: 0.8 }} />,
+      },
+    ]
   },
 ]
 

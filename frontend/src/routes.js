@@ -95,6 +95,7 @@ const Cashbook = React.lazy(() => import('./views/cashbook/Cashbook'))
 
 // Settings
 const PrintSettings = React.lazy(() => import('./views/settings/PrintSettings'))
+const LogoSettings = React.lazy(() => import('./views/settings/LogoSettings'))
 /**
  * Array of route configuration objects
  *
@@ -181,6 +182,7 @@ export const routes = [
   { path: '/profile', name: 'Hồ sơ Cá nhân', element: UserProfile },
   { path: '/settings', name: 'Cấu hình Hệ thống', exact: true },
   { path: '/settings/print', name: 'Cấu Hình In Ấn', element: PrintSettings },
+  { path: '/settings/logo', name: 'Cấu hình logo app', element: LogoSettings },
 ]
 
 export default routes

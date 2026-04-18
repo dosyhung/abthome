@@ -38,7 +38,6 @@ const PrintSettings = () => {
     print_paper_size: 'a4',
     print_show_signatures: 'true',
     print_company_logo: '',
-    system_sidebar_logo: '',
     print_bank_id_name: 'techcombank',
     print_bank_account: '19035881724013',
     print_bank_owner: 'CONG TY ABT',
@@ -47,10 +46,6 @@ const PrintSettings = () => {
   // Print Logo State
   const [logoFile, setLogoFile] = useState(null)
   const [oldLogoUrl, setOldLogoUrl] = useState('')
-
-  // Sidebar Logo State
-  const [sidebarLogoFile, setSidebarLogoFile] = useState(null)
-  const [oldSidebarLogoUrl, setOldSidebarLogoUrl] = useState('')
 
   const [isSaving, setIsSaving] = useState(false)
 
@@ -70,9 +65,6 @@ const PrintSettings = () => {
         }))
         if (res.print_company_logo) {
           setOldLogoUrl(res.print_company_logo)
-        }
-        if (res.system_sidebar_logo) {
-          setOldSidebarLogoUrl(res.system_sidebar_logo)
         }
       }
     } catch (error) {
@@ -96,9 +88,6 @@ const PrintSettings = () => {
       if (target === 'print') {
         setLogoFile(file)
         setSettings(prev => ({ ...prev, print_company_logo: objectUrl }))
-      } else if (target === 'sidebar') {
-        setSidebarLogoFile(file)
-        setSettings(prev => ({ ...prev, system_sidebar_logo: objectUrl }))
       }
     }
   }
@@ -126,24 +115,7 @@ const PrintSettings = () => {
         }
       }
 
-      // 2. Upload Logo Sidebar (nếu có chọn)
-      if (sidebarLogoFile) {
-        const formDataSide = new FormData()
-        formDataSide.append('logo', sidebarLogoFile)
-        if (oldSidebarLogoUrl && !oldSidebarLogoUrl.startsWith('blob:')) {
-          formDataSide.append('old_url', oldSidebarLogoUrl)
-        }
-
-        const uploadSideRes = await axiosClient.post('/upload/logo', formDataSide)
-
-        if (uploadSideRes && uploadSideRes.url) {
-          finalSettings.system_sidebar_logo = uploadSideRes.url
-          setSettings(prev => ({ ...prev, system_sidebar_logo: uploadSideRes.url }))
-          setOldSidebarLogoUrl(uploadSideRes.url)
-        }
-      }
-
-      // 3. Lưu toàn bộ config xuống DB
+      // 2. Lưu toàn bộ config xuống DB
       await axiosClient.put('/settings', finalSettings)
       alert("Lưu cấu hình in ấn thành công!")
     } catch (error) {
@@ -192,18 +164,6 @@ const PrintSettings = () => {
             </CCardHeader>
             <CCardBody>
               <CForm>
-                <div className="mb-4 bg-dark text-white p-3 rounded">
-                  <CFormLabel className="fw-bold">Logo Sidebar Hệ thống</CFormLabel>
-                  <CFormInput type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'sidebar')} />
-                  <div className="text-secondary small mt-1">Dùng để hiển thị lên góc trái thanh Sidebar. (Khuyên dùng: Ảnh trong suốt chữ màu Trắng/Sáng). Cần <a href="/" className="text-info">Tải lại trang</a> để xem thay đổi.</div>
-                  {settings.system_sidebar_logo && (
-                    <div className="mt-2 text-center p-2 rounded" style={{ background: '#3c4b64', width: 'fit-content' }}>
-                       <img src={getImageUrl(settings.system_sidebar_logo)} alt="Preview Sidebar Logo" style={{ maxHeight: '40px' }} />
-                    </div>
-                  )}
-                </div>
-
-                <hr/>
                 <h6 className="mb-3 fw-bold text-secondary">Cấu Hình Mẫu Giấy In</h6>
 
                 <div className="mb-3">

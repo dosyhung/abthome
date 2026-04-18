@@ -8,6 +8,7 @@
     "dev": "nodemon src/server.js"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "@prisma/client": "^5.x",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
