@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th4 17, 2026 lúc 01:08 PM
+-- Thời gian đã tạo: Th4 18, 2026 lúc 06:46 AM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.0.30
 
@@ -44,12 +44,14 @@ CREATE TABLE `batch` (
 --
 
 INSERT INTO `batch` (`id`, `batchNumber`, `mfgDate`, `expiryDate`, `variantId`, `initialQty`, `currentQty`, `importPrice`, `createdAt`) VALUES
-(1, '112', NULL, '2026-04-17 00:00:00.000', 1, 1, 91, 95000.00, '2026-04-17 04:34:15.289'),
+(1, '112', NULL, '2026-04-17 00:00:00.000', 1, 1, 84, 95000.00, '2026-04-17 04:34:15.289'),
 (2, '113', NULL, '2026-04-17 00:00:00.000', 1, 1, 0, 95000.00, '2026-04-17 04:35:51.397'),
 (3, '1135', NULL, '2026-04-17 00:00:00.000', 1, 1, 0, 95000.00, '2026-04-17 04:36:14.041'),
 (4, '002', NULL, '2026-04-17 00:00:00.000', 1, 1, 0, 95000.00, '2026-04-17 04:38:24.001'),
-(5, '1', NULL, '2026-04-17 00:00:00.000', 3, 9, 4, 10.00, '2026-04-17 05:32:12.199'),
-(6, '2', NULL, '2026-04-17 00:00:00.000', 3, 10, 10, 10.00, '2026-04-17 08:50:21.878');
+(5, '1', NULL, '2026-04-17 00:00:00.000', 3, 9, 0, 10.00, '2026-04-17 05:32:12.199'),
+(6, '2', NULL, '2026-04-17 00:00:00.000', 3, 10, 9, 10.00, '2026-04-17 08:50:21.878'),
+(7, '1', NULL, '2026-04-18 00:00:00.000', 4, 200, 200, 50000.00, '2026-04-18 02:28:43.466'),
+(8, '2', NULL, '2026-04-18 00:00:00.000', 7, 100, 40, 5000.00, '2026-04-18 03:41:58.250');
 
 -- --------------------------------------------------------
 
@@ -70,7 +72,8 @@ CREATE TABLE `category` (
 INSERT INTO `category` (`id`, `name`, `description`) VALUES
 (1, 'Tấm Ốp Nano', 'Tấm ốp nano các kích thước'),
 (2, 'Tấm Ốp Than Tre', 'tấm than tre các kích thước'),
-(3, 'Phụ kiện bếp', 'àasfasfasfasf');
+(3, 'Phụ kiện bếp', 'àasfasfasfasf'),
+(4, 'Sàn Nhựa', 'Sàn Nhựa');
 
 -- --------------------------------------------------------
 
@@ -98,7 +101,12 @@ INSERT INTO `inventorydetail` (`id`, `transactionId`, `variantId`, `batchId`, `q
 (4, 4, 1, 3, 1, 95000.00),
 (5, 5, 1, 4, 1, 95000.00),
 (6, 6, 3, 5, 9, 10.00),
-(7, 7, 3, 6, 10, 10.00);
+(7, 7, 3, 6, 10, 10.00),
+(8, 8, 4, 7, 200, 50000.00),
+(9, 9, 7, 8, 100, 5000.00),
+(10, 10, 7, NULL, 5, 5000.00),
+(11, 11, 6, NULL, 5, 50000.00),
+(12, 12, 3, NULL, 1, 10.00);
 
 -- --------------------------------------------------------
 
@@ -125,12 +133,17 @@ CREATE TABLE `inventorytransaction` (
 
 INSERT INTO `inventorytransaction` (`id`, `code`, `type`, `status`, `userId`, `partnerId`, `note`, `createdAt`, `paidAmount`, `totalAmount`) VALUES
 (1, 'PN455283', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-17 04:34:15.285', 0.00, 95000.00),
-(2, 'PN484578', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-17 04:34:44.580', 0.00, 9500000.00),
-(3, 'PN551394', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-17 04:35:51.395', 0.00, 95000.00),
-(4, 'PN574034', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-17 04:36:14.036', 0.00, 95000.00),
+(2, 'PN484578', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-17 04:34:44.580', 9500000.00, 9500000.00),
+(3, 'PN551394', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-17 04:35:51.395', 95000.00, 95000.00),
+(4, 'PN574034', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-17 04:36:14.036', 95000.00, 95000.00),
 (5, 'PN703994', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-17 04:38:23.996', 0.00, 95000.00),
-(6, 'PN932188', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-17 05:32:12.191', 0.00, 90.00),
-(7, 'PN821871', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-17 08:50:21.873', 0.00, 100.00);
+(6, 'PN932188', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-17 05:32:12.191', 90.00, 90.00),
+(7, 'PN821871', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-17 08:50:21.873', 100.00, 100.00),
+(8, 'PN323460', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-18 02:28:43.462', 0.00, 10000000.00),
+(9, 'PN718243', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-18 03:41:58.245', 0.00, 500000.00),
+(10, 'PN382256', 'IMPORT', 'COMPLETED', 4, 3, '', '2026-04-18 04:26:22.258', 0.00, 25000.00),
+(11, 'PN833111', 'IMPORT', 'COMPLETED', 4, 2, '', '2026-04-18 04:33:53.112', 0.00, 250000.00),
+(12, 'PN001778', 'IMPORT', 'COMPLETED', 4, 1, '', '2026-04-18 04:36:41.780', 10.00, 10.00);
 
 -- --------------------------------------------------------
 
@@ -168,17 +181,20 @@ INSERT INTO `order` (`id`, `code`, `customerId`, `userId`, `totalAmount`, `disco
 (11, 'ORD747806', 4, 4, 236000.00, 0.00, 236000.00, 'COMPLETED', '2026-04-17 07:59:07.808', 236000.00, NULL),
 (12, 'ORD769611', 4, 4, 115000.00, 0.00, 115000.00, 'COMPLETED', '2026-04-17 08:16:09.613', 115000.00, NULL),
 (13, 'ORD837022', 4, 4, 115000.00, 0.00, 115000.00, 'COMPLETED', '2026-04-17 08:33:57.024', 115000.00, 'Nếu bạn hay bị treo server và lười phải gõ lệnh kill-port, bạn có'),
-(14, 'ORD148979', 4, 4, 115000.00, 1000.00, 114000.00, 'COMPLETED', '2026-04-17 08:39:08.980', 112000.00, 'khách hàng đã chuyển khoản, giao hàng thu tiền'),
+(14, 'ORD148979', 4, 4, 115000.00, 1000.00, 114000.00, 'COMPLETED', '2026-04-17 08:39:08.980', 114000.00, 'khách hàng đã chuyển khoản, giao hàng thu tiền'),
 (15, 'HD698878', 4, 4, 18000.00, 0.00, 18000.00, 'COMPLETED', '2026-04-17 09:04:58.881', 18000.00, ''),
-(16, 'HD840655', 4, 4, 6000.00, 1000.00, 5000.00, 'PENDING', '2026-04-17 09:07:20.657', 5000.00, ''),
-(17, 'HD503926', 4, 4, 12000.00, 5000.00, 7000.00, 'PENDING', '2026-04-17 09:18:23.927', 7000.00, 'đã nhận tiền'),
-(18, 'HD901954', 4, 4, 115000.00, 0.00, 115000.00, 'PENDING', '2026-04-17 09:41:41.957', 115000.00, ''),
-(19, 'HD154452', 4, 4, 95000.00, 0.00, 95000.00, 'PENDING', '2026-04-17 09:45:54.454', 95000.00, ''),
-(20, 'HD645881', 4, 4, 115000.00, 0.00, 115000.00, 'PENDING', '2026-04-17 09:54:05.883', 115000.00, ''),
-(21, 'HD863953', 4, 4, 115000.00, 0.00, 115000.00, 'PENDING', '2026-04-17 09:57:43.955', 115000.00, ''),
-(22, 'HD880336', 5, 4, 115000.00, 0.00, 115000.00, 'PENDING', '2026-04-17 09:58:00.338', 115000.00, ''),
-(23, 'HD972652', 5, 4, 115000.00, 0.00, 115000.00, 'PENDING', '2026-04-17 09:59:32.654', 115000.00, ''),
-(24, 'HD121337', 5, 4, 127000.00, 0.00, 127000.00, 'PENDING', '2026-04-17 10:02:01.339', 127000.00, '');
+(16, 'HD840655', 4, 4, 6000.00, 1000.00, 5000.00, 'COMPLETED', '2026-04-17 09:07:20.657', 5000.00, ''),
+(17, 'HD503926', 4, 4, 12000.00, 5000.00, 7000.00, 'COMPLETED', '2026-04-17 09:18:23.927', 7000.00, 'đã nhận tiền'),
+(18, 'HD901954', 4, 4, 115000.00, 0.00, 115000.00, 'COMPLETED', '2026-04-17 09:41:41.957', 115000.00, ''),
+(19, 'HD154452', 4, 4, 95000.00, 0.00, 95000.00, 'COMPLETED', '2026-04-17 09:45:54.454', 95000.00, ''),
+(20, 'HD645881', 4, 4, 115000.00, 0.00, 115000.00, 'COMPLETED', '2026-04-17 09:54:05.883', 115000.00, ''),
+(21, 'HD863953', 4, 4, 115000.00, 0.00, 115000.00, 'COMPLETED', '2026-04-17 09:57:43.955', 115000.00, ''),
+(22, 'HD880336', 5, 4, 115000.00, 0.00, 115000.00, 'COMPLETED', '2026-04-17 09:58:00.338', 115000.00, ''),
+(23, 'HD972652', 5, 4, 115000.00, 0.00, 115000.00, 'COMPLETED', '2026-04-17 09:59:32.654', 115000.00, ''),
+(24, 'HD121337', 5, 4, 127000.00, 0.00, 127000.00, 'COMPLETED', '2026-04-17 10:02:01.339', 127000.00, ''),
+(25, 'HD732925', 4, 4, 4750000.00, 0.00, 4750000.00, 'COMPLETED', '2026-04-18 03:42:12.927', 4750000.00, ''),
+(26, 'HD795580', 4, 4, 475000.00, 0.00, 475000.00, 'COMPLETED', '2026-04-18 03:43:15.581', 475000.00, ''),
+(27, 'HD896756', 4, 4, 475000.00, 0.00, 475000.00, 'COMPLETED', '2026-04-18 03:44:56.757', 475000.00, '');
 
 -- --------------------------------------------------------
 
@@ -223,7 +239,10 @@ INSERT INTO `orderitem` (`id`, `orderId`, `variantId`, `batchId`, `quantity`, `p
 (23, 22, 1, NULL, 1, 115000.00),
 (24, 23, 1, NULL, 1, 115000.00),
 (25, 24, 3, NULL, 2, 6000.00),
-(26, 24, 1, NULL, 1, 115000.00);
+(26, 24, 1, NULL, 1, 115000.00),
+(27, 25, 7, 8, 50, 95000.00),
+(28, 26, 7, NULL, 5, 95000.00),
+(29, 27, 7, NULL, 5, 95000.00);
 
 -- --------------------------------------------------------
 
@@ -246,10 +265,10 @@ CREATE TABLE `partner` (
 --
 
 INSERT INTO `partner` (`id`, `type`, `name`, `phone`, `address`, `taxCode`, `debtBalance`) VALUES
-(1, 'SUPPLIER', 'Công Ty Cổ Phần Thương Mại ABT', '0987767777', 'Tp Vinh - Nghệ An', '46546465', 0.00),
-(2, 'SUPPLIER', 'Công Ty TNHH Vinh Phúc', '351646516', 'Hà Nội', '4165465', 0.00),
-(3, 'SUPPLIER', 'Công Ty TNHH TAT VIỆT NAM', '0962155366', 'Thạch Thất - Hà Nội', '465465465', 0.00),
-(4, 'CUSTOMER', 'Anh Hùng ABT', '0983233566', 'àdafasfafaf', NULL, 2000.00),
+(1, 'SUPPLIER', 'Công Ty Cổ Phần Thương Mại ABT', '0987767777', 'Tp Vinh - Nghệ An', '46546465', 10690000.00),
+(2, 'SUPPLIER', 'Công Ty TNHH Vinh Phúc', '351646516', 'Hà Nội', '4165465', 250000.00),
+(3, 'SUPPLIER', 'Công Ty TNHH TAT VIỆT NAM', '0962155366', 'Thạch Thất - Hà Nội', '465465465', 25000.00),
+(4, 'CUSTOMER', 'Anh Hùng ABT', '0983233566', 'àdafasfafaf', NULL, 0.00),
 (5, 'CUSTOMER', 'Chị Linh', '54166516', 'adfasfasfaf', NULL, 0.00);
 
 -- --------------------------------------------------------
@@ -297,7 +316,17 @@ INSERT INTO `payment` (`id`, `code`, `type`, `amount`, `partnerId`, `orderId`, `
 (19, 'REC863961', 'INCOME', 115000.00, 4, 21, 'CASH', 'Thanh toán cho đơn bán hàng HD863953', '2026-04-17 09:57:43.963', NULL),
 (20, 'REC880346', 'INCOME', 115000.00, 5, 22, 'CASH', 'Thanh toán cho đơn bán hàng HD880336', '2026-04-17 09:58:00.347', NULL),
 (21, 'REC972659', 'INCOME', 115000.00, 5, 23, 'CASH', 'Thanh toán cho đơn bán hàng HD972652', '2026-04-17 09:59:32.660', NULL),
-(22, 'REC121344', 'INCOME', 127000.00, 5, 24, 'CASH', 'Thanh toán cho đơn bán hàng HD121337', '2026-04-17 10:02:01.345', NULL);
+(22, 'REC121344', 'INCOME', 127000.00, 5, 24, 'CASH', 'Thanh toán cho đơn bán hàng HD121337', '2026-04-17 10:02:01.345', NULL),
+(23, 'REC732932', 'INCOME', 4750000.00, 4, 25, 'CASH', 'Thanh toán cho đơn bán hàng HD732925', '2026-04-18 03:42:12.934', NULL),
+(24, 'REC795583', 'INCOME', 475000.00, 4, 26, 'CASH', 'Thanh toán cho đơn bán hàng HD795580', '2026-04-18 03:43:15.584', NULL),
+(25, 'REC896759', 'INCOME', 475000.00, 4, 27, 'CASH', 'Thanh toán cho đơn bán hàng HD896756', '2026-04-18 03:44:56.760', NULL),
+(26, 'PAY-1776487039758', 'EXPENSE', 10.00, 1, NULL, 'Chuyển khoản', 'Thanh toán đơn nhập: PN001778 cho NCC: Công Ty Cổ Phần Thương Mại ABT', '2026-04-18 04:37:19.759', 12),
+(27, 'REC-1776487130702', 'INCOME', 2000.00, 4, 14, 'Tiền mặt', 'Thu nợ Đơn hàng: ORD148979 của KH: Anh Hùng ABT', '2026-04-18 04:38:50.703', NULL),
+(28, 'PAY-1776487219500', 'EXPENSE', 9500000.00, 1, NULL, 'Chuyển khoản', 'Thanh toán đơn nhập: PN484578 cho NCC: Công Ty Cổ Phần Thương Mại ABT', '2026-04-18 04:40:19.502', 2),
+(29, 'PAY-1776487238005', 'EXPENSE', 95000.00, 1, NULL, 'Chuyển khoản', 'Thanh toán đơn nhập: PN551394 cho NCC: Công Ty Cổ Phần Thương Mại ABT', '2026-04-18 04:40:38.006', 3),
+(30, 'PAY-1776487327541', 'EXPENSE', 95000.00, 1, NULL, 'Chuyển khoản', 'Thanh toán đơn nhập: PN574034 cho NCC: Công Ty Cổ Phần Thương Mại ABT', '2026-04-18 04:42:07.542', 4),
+(31, 'PAY-1776487345660', 'EXPENSE', 90.00, 1, NULL, 'Tiền mặt', 'Thanh toán đơn nhập: PN932188 cho NCC: Công Ty Cổ Phần Thương Mại ABT', '2026-04-18 04:42:25.662', 6),
+(32, 'PAY-1776487457516', 'EXPENSE', 100.00, 1, NULL, 'Chuyển khoản', 'Thanh toán đơn nhập: PN821871 cho NCC: Công Ty Cổ Phần Thương Mại ABT', '2026-04-18 04:44:17.517', 7);
 
 -- --------------------------------------------------------
 
@@ -320,9 +349,13 @@ CREATE TABLE `product` (
 --
 
 INSERT INTO `product` (`id`, `code`, `name`, `description`, `categoryId`, `createdAt`, `updatedAt`) VALUES
-(1, 'SP144706', 'Tấm Ốp Nano Abt 08', NULL, 1, '2026-04-17 04:29:04.707', '2026-04-17 04:29:04.707'),
-(2, 'SP190608', 'Tấm Ốp Nano Abt 021', NULL, 1, '2026-04-17 04:29:50.609', '2026-04-17 04:29:50.609'),
-(3, 'SP898994', 'Tấm Ốp Than Tre', NULL, 2, '2026-04-17 05:31:38.996', '2026-04-17 05:31:38.996');
+(1, 'SP144706', 'Tấm Ốp Nano Abt 08', 'Tấm Ốp Nano Abt 08 Khổ 3m', 1, '2026-04-17 04:29:04.707', '2026-04-18 01:59:40.182'),
+(3, 'SP898994', 'Tấm Ốp Than Tre', NULL, 2, '2026-04-17 05:31:38.996', '2026-04-17 05:31:38.996'),
+(4, 'SP898995', 'Sàn Nhựa Hèm Khoá Abt 6001', 'Sàn Nhựa Hèm Khoá Abt 6001', 4, '2026-04-18 02:28:14.997', '2026-04-18 02:28:14.997'),
+(5, 'SP898996', 'Sàn Nhựa Hèm Khoá Abt 6002', 'Sàn Nhựa Hèm Khoá Abt 6002', 4, '2026-04-18 02:32:13.803', '2026-04-18 02:32:13.803'),
+(6, 'SP898997', 'Sàn Nhựa Hèm Khoá Abt 6003', 'Sàn Nhựa Hèm Khoá Abt 6003', 4, '2026-04-18 02:34:31.282', '2026-04-18 02:34:31.282'),
+(7, 'SP898998', 'Sàn Nhựa Hèm Khoá Abt 6005', 'Sàn Nhựa Hèm Khoá Abt 6005', 4, '2026-04-18 02:37:09.824', '2026-04-18 02:37:09.824'),
+(8, 'SP898999', 'Tấm Ốp Abt 011', 'Tấm Ốp Abt 011', 1, '2026-04-18 02:43:02.498', '2026-04-18 02:43:02.498');
 
 -- --------------------------------------------------------
 
@@ -346,9 +379,13 @@ CREATE TABLE `productvariant` (
 --
 
 INSERT INTO `productvariant` (`id`, `sku`, `productId`, `attributes`, `importPrice`, `sellPrice`, `stockCount`, `minStockLevel`) VALUES
-(1, 'SKU-SP144706-1', 1, '{\"details\":\"Khổ 3000\"}', 95000.00, 115000.00, 91, 5),
-(2, 'SKU-SP190608-1', 2, '{\"details\":\"dài 3m\"}', 95000.00, 115000.00, 0, 10),
-(3, 'SKU-SP898994-1', 3, '{\"details\":\"pet acrylic\"}', 10.00, 6000.00, 7, 10);
+(1, 'SKU-SP144706-1', 1, '{\"details\":\"KT: 9x3000x400mm\"}', 95000.00, 115000.00, 84, 5),
+(3, 'SKU-SP898994-1', 3, '{\"details\":\"pet acrylic\"}', 10.00, 6000.00, 3, 10),
+(4, 'SP898995', 4, '{\"details\":\"1222x7x140mm\"}', 50000.00, 65000.00, 200, 5),
+(5, 'SP898996', 5, '{\"details\":\"1220x7x140mm\"}', 5000.00, 95000.00, 0, 5),
+(6, 'SP898997', 6, '{\"details\":\"1220x7x140mm\"}', 50000.00, 95000.00, 5, 5),
+(7, 'SP898998', 7, '{\"details\":\"1220x7x140mm\"}', 5000.00, 95000.00, 45, 5),
+(8, 'SP898999', 8, '{\"details\":\"400x9x3000mm\"}', 50000.00, 95000.00, 0, 5);
 
 -- --------------------------------------------------------
 
@@ -435,6 +472,9 @@ CREATE TABLE `systemsetting` (
 --
 
 INSERT INTO `systemsetting` (`key`, `value`) VALUES
+('print_bank_account', '19035881724013'),
+('print_bank_id_name', 'techcombank'),
+('print_bank_owner', 'CONG TY ABT'),
 ('print_company_address', 'Số 10 Nguyễn Thiếp - P. Hạc Thành - T.Thanh Hoá'),
 ('print_company_logo', '/public/uploads/logo-1776411265831-729310422.png'),
 ('print_company_name', 'CÔNG TY TNHH THƯƠNG MẠI VÀ XÂY DỰNG TOP HOME'),
@@ -442,7 +482,7 @@ INSERT INTO `systemsetting` (`key`, `value`) VALUES
 ('print_invoice_title', 'HOÁ ĐƠN BÁN HÀNG'),
 ('print_paper_size', 'a5'),
 ('print_show_discount', 'false'),
-('print_show_signatures', 'false'),
+('print_show_signatures', 'true'),
 ('system_sidebar_logo', '/public/uploads/logo-1776397942126-667444183.png');
 
 -- --------------------------------------------------------
@@ -644,37 +684,37 @@ ALTER TABLE `_prisma_migrations`
 -- AUTO_INCREMENT cho bảng `batch`
 --
 ALTER TABLE `batch`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT cho bảng `category`
 --
 ALTER TABLE `category`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT cho bảng `inventorydetail`
 --
 ALTER TABLE `inventorydetail`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT cho bảng `inventorytransaction`
 --
 ALTER TABLE `inventorytransaction`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT cho bảng `order`
 --
 ALTER TABLE `order`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT cho bảng `orderitem`
 --
 ALTER TABLE `orderitem`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT cho bảng `partner`
@@ -686,19 +726,19 @@ ALTER TABLE `partner`
 -- AUTO_INCREMENT cho bảng `payment`
 --
 ALTER TABLE `payment`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT cho bảng `product`
 --
 ALTER TABLE `product`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT cho bảng `productvariant`
 --
 ALTER TABLE `productvariant`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT cho bảng `role`
