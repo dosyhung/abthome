@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
   CCard,
   CCardHeader,
@@ -23,10 +23,12 @@ import CIcon from '@coreui/icons-react'
 import { cilPlus, cilTrash, cilSave, cilArrowLeft } from '@coreui/icons'
 import axiosClient from '../../api/axiosClient'
 
-const ProductCreate = () => {
+const ProductEdit = () => {
   const navigate = useNavigate()
+  const { id } = useParams()
   const [categories, setCategories] = useState([])
   const [isSaving, setIsSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   // Master Data
   const [productData, setProductData] = useState({
@@ -36,12 +38,11 @@ const ProductCreate = () => {
   })
 
   // Variants Array
-  const [variants, setVariants] = useState([
-    { id: Date.now(), sku: '', attributes: '', importPrice: 0, sellPrice: 0, minStockLevel: 5 }
-  ])
+  const [variants, setVariants] = useState([])
 
   useEffect(() => {
     fetchCategories()
+    fetchProductDetails()
   }, [])
 
   const fetchCategories = async () => {
@@ -50,6 +51,47 @@ const ProductCreate = () => {
       setCategories(data)
     } catch (e) {
       console.error('Error fetching categories:', e)
+    }
+  }
+
+  const fetchProductDetails = async () => {
+    try {
+      setLoading(true)
+      const data = await axiosClient.get(`/products/${id}`)
+      
+      setProductData({
+        name: data.name || '',
+        categoryId: data.categoryId || '',
+        description: data.description || ''
+      })
+
+      if (data.variants && data.variants.length > 0) {
+        const prefilledVariants = data.variants.map((v, i) => {
+          let attrStr = ''
+          if (v.attributes && typeof v.attributes === 'object') {
+            attrStr = v.attributes.details || JSON.stringify(v.attributes)
+          } else if (typeof v.attributes === 'string') {
+            attrStr = v.attributes
+          }
+          
+          return {
+            id: v.id || Date.now() + i,
+            sku: v.sku || '',
+            attributes: attrStr,
+            importPrice: v.importPrice ? Number(v.importPrice).toLocaleString('vi-VN') : '',
+            sellPrice: v.sellPrice ? Number(v.sellPrice).toLocaleString('vi-VN') : '',
+            minStockLevel: v.minStockLevel || 5
+          }
+        })
+        setVariants(prefilledVariants)
+      } else {
+        setVariants([{ id: Date.now(), sku: '', attributes: '', importPrice: 0, sellPrice: 0, minStockLevel: 5 }])
+      }
+    } catch (e) {
+      console.error('Lỗi khi tải chi tiết SP:', e)
+      alert("Không tải được chi tiết sản phẩm!")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -88,7 +130,6 @@ const ProductCreate = () => {
       return
     }
 
-    // Validate variants
     const hasEmptyAttribute = variants.some(v => typeof v.attributes === 'string' && v.attributes.trim() === '')
     if (hasEmptyAttribute) {
       alert("Vui lòng nhập Phân loại / Thuộc tính cho tất cả biến thể!")
@@ -110,29 +151,32 @@ const ProductCreate = () => {
         }))
       }
 
-      await axiosClient.post('/products', payload)
-      navigate('/products/list', { state: { successMessage: 'Khởi tạo Sản Phẩm thành công!' } })
+      await axiosClient.put(`/products/${id}`, payload)
+      navigate('/products/list', { state: { successMessage: 'Cập nhật Sản Phẩm thành công!' } })
       
     } catch (error) {
-      const msg = error.response?.data?.message || 'Có lỗi xảy ra khi lưu sản phẩm'
+      const msg = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật'
       alert(msg)
     } finally {
       setIsSaving(false)
     }
   }
 
+  if (loading) {
+    return <div>Đang tải dữ liệu sản phẩm...</div>
+  }
+
   return (
     <CRow>
       <CCol xs={12}>
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h4 className="mb-0">Thêm Mới Sản Phẩm</h4>
+          <h4 className="mb-0">Cập Nhật Sản Phẩm</h4>
           <CButton color="secondary" variant="ghost" onClick={() => navigate('/products/list')} className="d-flex align-items-center gap-2">
             <CIcon icon={cilArrowLeft} /> Quay lại
           </CButton>
         </div>
       </CCol>
 
-      {/* THÔNG TIN CHUNG */}
       <CCol lg={4}>
         <CCard className="mb-4 shadow-sm border-top-primary border-top-3">
           <CCardHeader className="bg-white">
@@ -141,7 +185,7 @@ const ProductCreate = () => {
           <CCardBody>
             <CForm>
               <div className="mb-3 text-muted small fst-italic">
-                * Mã Sản Phẩm sẽ được hệ thống sinh tự động.
+                * Mã Sản Phẩm sẽ được giữ nguyên.
               </div>
               <div className="mb-3">
                 <CFormLabel className="fw-bold">Tên Sản Phẩm <span className="text-danger">*</span></CFormLabel>
@@ -176,7 +220,6 @@ const ProductCreate = () => {
         </CCard>
       </CCol>
 
-      {/* DANH SÁCH BIẾN THỂ */}
       <CCol lg={8}>
         <CCard className="mb-4 shadow-sm border-top-success border-top-3">
           <CCardHeader className="bg-white d-flex justify-content-between align-items-center">
@@ -207,6 +250,7 @@ const ProductCreate = () => {
                           placeholder="(Tự sinh)" 
                           value={variant.sku}
                           onChange={(e) => handleVariantChange(variant.id, 'sku', e.target.value)}
+                          readOnly={!!variant.sku && variant.sku.startsWith("SKU-")}
                         />
                       </CTableDataCell>
                       <CTableDataCell>
@@ -260,7 +304,7 @@ const ProductCreate = () => {
                  disabled={isSaving}
                  onClick={handleSave}
                >
-                 <CIcon icon={cilSave} /> {isSaving ? 'Đang hệ thống hoá...' : 'Lưu Sản Phẩm'}
+                 <CIcon icon={cilSave} /> {isSaving ? 'Đang cập nhật...' : 'Cập Nhật Sản Phẩm'}
                </CButton>
             </div>
           </CCardBody>
@@ -270,4 +314,4 @@ const ProductCreate = () => {
   )
 }
 
-export default ProductCreate
+export default ProductEdit

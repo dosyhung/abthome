@@ -12,12 +12,13 @@ import {
   CTableHeaderCell,
   CBadge,
   CCollapse,
+  CAlert,
 } from '@coreui/react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 // Nếu không tìm thấy CIcon thì comment out hoặc cài đặt bổ sung thư viện @coreui/icons-react
 // Ở đây tôi dùng text thay thế nếu dự án chưa import đúng icon, hoặc giữ CIcon nếu đã cài
 import CIcon from '@coreui/icons-react'
-import { cilPlus, cilChevronBottom, cilChevronRight } from '@coreui/icons'
+import { cilPlus, cilChevronBottom, cilChevronRight, cilTrash, cilPencil } from '@coreui/icons'
 import axiosClient from '../../api/axiosClient'
 
 // ===============================================
@@ -25,7 +26,18 @@ import axiosClient from '../../api/axiosClient'
 // ===============================================
 const ProductList = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [products, setProducts] = useState([])
+  const [alertMessage, setAlertMessage] = useState(location.state?.successMessage || '')
+
+  useEffect(() => {
+    if (alertMessage) {
+      // Clear react router status
+      window.history.replaceState({}, document.title)
+      const t = setTimeout(() => setAlertMessage(''), 4000)
+      return () => clearTimeout(t)
+    }
+  }, [alertMessage])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState([]) // Lưu ID của các dòng đang được mở rộng
 
@@ -56,6 +68,22 @@ const ProductList = () => {
     }
   }
 
+  const handleDelete = async (id, e) => {
+    e.stopPropagation()
+    if (window.confirm('CẢNH BÁO: \nBạn có chắc chắn muốn xóa sản phẩm này?\nThao tác này sẽ bị chặn nếu sản phẩm đã phát sinh kho/bán hàng.')) {
+      try {
+        setLoading(true)
+        await axiosClient.delete(`/products/${id}`)
+        setProducts(products.filter(p => p.id !== id))
+        setAlertMessage('Đã xóa sản phẩm thành công!')
+      } catch (error) {
+        alert(error.response?.data?.message || 'Có lỗi xảy ra khi xóa sản phẩm')
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
   // Helper tính tổng tồn kho từ mảng variants
   const calculateTotalStock = (variants) => {
     if (!variants || variants.length === 0) return 0
@@ -68,8 +96,14 @@ const ProductList = () => {
   }
 
   return (
-    <CCard className="mb-4">
-      <CCardHeader className="d-flex justify-content-between align-items-center">
+    <>
+      {alertMessage && (
+        <CAlert color="success" dismissible onClose={() => setAlertMessage('')}>
+          {alertMessage}
+        </CAlert>
+      )}
+      <CCard className="mb-4">
+        <CCardHeader className="d-flex justify-content-between align-items-center">
         <strong>Danh mục vật tư & Sản phẩm</strong>
         <CButton color="primary" onClick={() => navigate('/products/create')} className="d-flex align-items-center gap-2">
           <CIcon icon={cilPlus} />
@@ -116,7 +150,14 @@ const ProductList = () => {
                         </CBadge>
                       </CTableDataCell>
                       <CTableDataCell className="text-end">
-                        <CButton color="secondary" variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); /* handle edit */ }}>Sửa</CButton>
+                        <div className="d-flex justify-content-end gap-2">
+                          <CButton color="info" variant="ghost" size="sm" className="p-1 px-2 d-flex align-items-center gap-1" onClick={(e) => { e.stopPropagation(); navigate(`/products/edit/${product.id}`) }}>
+                            <CIcon icon={cilPencil} size="sm" /> Sửa
+                          </CButton>
+                          <CButton color="danger" variant="ghost" size="sm" className="p-1 px-2 d-flex align-items-center gap-1" onClick={(e) => handleDelete(product.id, e)}>
+                            <CIcon icon={cilTrash} size="sm" /> Xóa
+                          </CButton>
+                        </div>
                       </CTableDataCell>
                     </CTableRow>
 
@@ -125,11 +166,11 @@ const ProductList = () => {
                       <CTableDataCell colSpan="6" className="p-0 border-0">
                         <CCollapse visible={isExpanded}>
                           <div className="p-3 bg-light m-2 rounded">
-                            <h6 className="mb-3 text-secondary">Khay chứa: Biến thể (Variants) & Lô hàng (Batches)</h6>
+                            <h6 className="mb-3 text-secondary">Thông Tin Chi Tiết</h6>
                             <CTable small bordered className="mb-0">
                               <CTableHead>
                                 <CTableRow>
-                                  <CTableHeaderCell>SKU</CTableHeaderCell>
+                                  <CTableHeaderCell>Mã Sản Phẩm</CTableHeaderCell>
                                   <CTableHeaderCell>Thuộc tính</CTableHeaderCell>
                                   <CTableHeaderCell className="text-end">Giá nhập</CTableHeaderCell>
                                   <CTableHeaderCell className="text-end">Giá bán</CTableHeaderCell>
@@ -141,11 +182,12 @@ const ProductList = () => {
                                   product.variants.map((v) => (
                                     <CTableRow key={v.id}>
                                       <CTableDataCell><strong>{v.sku}</strong></CTableDataCell>
+
                                       <CTableDataCell>
                                         {/* Render thuộc tính từ JSON */}
                                         {v.attributes && Object.entries(v.attributes).map(([key, val]) => (
                                           <CBadge key={key} color="secondary" className="me-1">
-                                            {key}: {val}
+                                            {key === 'details' ? val : `${key}: ${val}`}
                                           </CBadge>
                                         ))}
                                       </CTableDataCell>
@@ -186,7 +228,8 @@ const ProductList = () => {
           </CTable>
         )}
       </CCardBody>
-    </CCard>
+      </CCard>
+    </>
   )
 }
 

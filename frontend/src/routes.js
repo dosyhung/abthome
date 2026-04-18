@@ -76,6 +76,7 @@ const Widgets = React.lazy(() => import('./views/widgets/Widgets'))
 // Products & Inventory
 const ProductList = React.lazy(() => import('./views/products/ProductList'))
 const ProductCreate = React.lazy(() => import('./views/products/ProductCreate'))
+const ProductEdit = React.lazy(() => import('./views/products/ProductEdit'))
 const CategoryList = React.lazy(() => import('./views/products/CategoryList'))
 const ImportInventoryForm = React.lazy(() => import('./views/inventory/ImportInventoryForm'))
 const InventoryList = React.lazy(() => import('./views/inventory/InventoryList'))
@@ -164,6 +165,7 @@ export const routes = [
   { path: '/products', name: 'Sản phẩm', exact: true },
   { path: '/products/list', name: 'Danh mục vật tư/SP', element: ProductList },
   { path: '/products/create', name: 'Thêm mới Sản Phẩm', element: ProductCreate },
+  { path: '/products/edit/:id', name: 'Cập nhật Sản Phẩm', element: ProductEdit },
   { path: '/products/categories', name: 'Quản lý Danh Mục', element: CategoryList },
   { path: '/inventory', name: 'Giao dịch Kho', exact: true },
   { path: '/inventory/list', name: 'Danh sách Phiếu', element: InventoryList },
