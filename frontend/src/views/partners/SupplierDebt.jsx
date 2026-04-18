@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   CCard,
   CCardHeader,
@@ -25,20 +26,22 @@ import {
   CBadge
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilMoney, cilBuilding } from '@coreui/icons'
+import { cilMoney, cilBuilding, cilCheckCircle } from '@coreui/icons'
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0)
 }
 
 const SupplierDebt = () => {
+  const navigate = useNavigate()
   const [suppliers, setSuppliers] = useState([])
   const [loading, setLoading] = useState(true)
 
   // -- Modal State --
   const [visible, setVisible] = useState(false)
+  const [successModalVisible, setSuccessModalVisible] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState(null)
-  
+
   // -- Unpaid Imports State --
   const [unpaidImports, setUnpaidImports] = useState([])
   const [selectedImport, setSelectedImport] = useState(null)
@@ -73,7 +76,7 @@ const SupplierDebt = () => {
     setUnpaidImports([])
     setSelectedImport(null)
     setPayAmount('')
-    
+
     try {
       const res = await fetch(`/api/payments/partners/${supplier.id}/unpaid-imports`)
       if (res.ok) {
@@ -94,7 +97,7 @@ const SupplierDebt = () => {
 
   const handleMakePayment = async () => {
     const amountToPay = Number(payAmount)
-    
+
     if (!amountToPay || amountToPay <= 0) {
       alert("Vui lòng nhập số tiền hợp lệ!")
       return
@@ -121,9 +124,13 @@ const SupplierDebt = () => {
       })
 
       if (res.ok) {
-        alert(`Thanh toán thành công ${formatCurrency(amountToPay)}!`)
-        setVisible(false)
-        fetchSuppliers() // Refresh
+        setVisible(false) // Đóng Modal Thanh toán
+        setSuccessModalVisible(true) // Bật Modal Thành công xanh lè
+
+        // Trễ 2.5s để người dùng đọc thông điệp ngầu rồi bay nhảy qua Sổ Quỹ
+        setTimeout(() => {
+          navigate('/cashbook')
+        }, 2200)
       } else {
         const errorData = await res.json()
         alert(`Lỗi: ${errorData.message || 'Không thể chi tiền'}`)
@@ -138,13 +145,13 @@ const SupplierDebt = () => {
     <>
       <CCard className="mb-4 shadow-sm border-top-warning border-top-3">
         <CCardHeader className="bg-white pb-0 d-flex justify-content-between align-items-center">
-          <h5 className="mb-3 text-warning"><CIcon icon={cilBuilding} className="me-2"/>Quản lý Công nợ Nhà cung cấp</h5>
+          <h5 className="mb-3 text-warning"><CIcon icon={cilBuilding} className="me-2" />Quản lý Công nợ Nhà cung cấp</h5>
         </CCardHeader>
         <CCardBody>
           {loading ? (
             <div className="text-center py-5">Đang tải dữ liệu...</div>
           ) : suppliers.length === 0 ? (
-             <div className="text-center text-success fw-bold py-5 fs-5">
+            <div className="text-center text-success fw-bold py-5 fs-5">
               Tuyệt vời! Công ty không nợ Nhà cung cấp nào.
             </div>
           ) : (
@@ -161,16 +168,16 @@ const SupplierDebt = () => {
                 {suppliers.map((s) => (
                   <CTableRow key={s.id}>
                     <CTableDataCell>
-                       <strong className="d-block">{s.name}</strong>
+                      <strong className="d-block">{s.name}</strong>
                     </CTableDataCell>
                     <CTableDataCell>{s.phone}</CTableDataCell>
                     <CTableDataCell className="text-end fw-bold text-danger fs-6">
                       {formatCurrency(s.debtBalance)}
                     </CTableDataCell>
                     <CTableDataCell className="text-center">
-                      <CButton 
-                        color="warning" 
-                        size="sm" 
+                      <CButton
+                        color="warning"
+                        size="sm"
                         variant="outline"
                         className="d-flex align-items-center justify-content-center m-auto gap-1 fw-bold text-dark"
                         onClick={() => openModal(s)}
@@ -186,9 +193,9 @@ const SupplierDebt = () => {
         </CCardBody>
       </CCard>
 
-      <CModal 
+      <CModal
         size="lg"
-        visible={visible} 
+        visible={visible}
         onClose={() => setVisible(false)}
         backdrop="static"
       >
@@ -202,13 +209,13 @@ const SupplierDebt = () => {
               {unpaidImports.length === 0 ? (
                 <div className="text-muted text-center p-3">Đang tải đơn hàng hoặc Nợ tồn đọng không theo đơn...</div>
               ) : (
-                <div style={{maxHeight: '300px', overflowY: 'auto'}}>
+                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                   {unpaidImports.map(inv => {
                     const debtAmount = Number(inv.totalAmount) - Number(inv.paidAmount)
                     const isSelected = selectedImport?.id === inv.id
                     return (
-                      <div 
-                        key={inv.id} 
+                      <div
+                        key={inv.id}
                         className={`p-3 mb-2 border rounded cursor-pointer ${isSelected ? 'bg-warning bg-opacity-10 border-warning border-2' : 'bg-white'}`}
                         onClick={() => handleSelectImport(inv)}
                         style={{ cursor: 'pointer' }}
@@ -233,16 +240,16 @@ const SupplierDebt = () => {
               {selectedImport && (
                 <CBadge color="warning" className="mb-3 w-100 p-2 fs-6 text-dark border">Thanh toán cho: {selectedImport.code}</CBadge>
               )}
-              
+
               <div className="mb-3 mt-2">
                 <label className="fw-bold mb-1">Số tiền chi trả (*)</label>
                 <CInputGroup>
-                  <CFormInput 
-                    type="number" 
+                  <CFormInput
+                    type="number"
                     min="1"
                     className="fs-5 fw-bold text-end text-danger"
-                    value={payAmount} 
-                    onChange={(e) => setPayAmount(e.target.value)} 
+                    value={payAmount}
+                    onChange={(e) => setPayAmount(e.target.value)}
                     placeholder="Nhập số tiền..."
                   />
                   <CInputGroupText>VNĐ</CInputGroupText>
@@ -259,8 +266,8 @@ const SupplierDebt = () => {
 
               <div className="mb-3">
                 <label className="fw-bold mb-1">Lý do / Ghi chú</label>
-                <CFormTextarea 
-                  rows={3} 
+                <CFormTextarea
+                  rows={3}
                   value={payNote}
                   onChange={(e) => setPayNote(e.target.value)}
                   placeholder="Ghi chú chi tiết giao dịch ra khỏi quỹ..."
@@ -277,6 +284,24 @@ const SupplierDebt = () => {
             TẠO PHIẾU CHI
           </CButton>
         </CModalFooter>
+      </CModal>
+
+      {/* --- MODAL THÔNG BÁO THÀNH CÔNG --- */}
+      <CModal
+        visible={successModalVisible}
+        onClose={() => setSuccessModalVisible(false)}
+        alignment="center"
+        backdrop="static"
+      >
+        <CModalBody className="text-center py-5">
+          <CIcon icon={cilCheckCircle} className="text-success mb-3" style={{ width: '4rem', height: '4rem' }} />
+          <h3 className="text-success fw-bold text-uppercase">Duyệt Chi Thành Công!</h3>
+          <p className="text-dark fs-5 mt-2 mb-1">Thanh toán nợ thành công: <strong className="text-danger">{formatCurrency(payAmount)}</strong></p>
+          <div className="spinner-border text-success mt-4 border-3" role="status" style={{ width: '2.5rem', height: '2.5rem' }}>
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-3 text-secondary fst-italic">Hệ thống đang dịch chuyển bạn về Sổ Quỹ Kế Toán...</p>
+        </CModalBody>
       </CModal>
     </>
   )

@@ -96,6 +96,30 @@ const MainChart = ({ timeFilter = 'Month' }) => {
             legend: {
               display: false,
             },
+            tooltip: {
+              callbacks: {
+                labelColor: function(context) {
+                  return {
+                    borderColor: context.dataset.borderColor,
+                    backgroundColor: context.dataset.borderColor,
+                  };
+                },
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.parsed.y !== null) {
+                    if (context.dataset.yAxisID === 'y1') {
+                      label += context.parsed.y + ' Đơn';
+                    } else {
+                      label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(context.parsed.y);
+                    }
+                  }
+                  return label;
+                }
+              }
+            }
           },
           scales: {
             x: {
@@ -112,6 +136,7 @@ const MainChart = ({ timeFilter = 'Month' }) => {
               display: true,
               position: 'left',
               beginAtZero: true,
+              grace: '15%',
               border: {
                 color: getStyle('--cui-border-color-translucent'),
               },
@@ -130,6 +155,7 @@ const MainChart = ({ timeFilter = 'Month' }) => {
               display: true,
               position: 'right',
               beginAtZero: true,
+              grace: '35%',
               grid: {
                 drawOnChartArea: false, // Không vẽ đè lưới lên y1 để tránh rối mắt
               },

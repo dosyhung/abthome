@@ -632,7 +632,7 @@ const CreateOrder = () => {
               className="text-white"
               onClick={() => {
                 setShowSuccessModal(false)
-                navigate('/orders')
+                navigate('/orders/list')
               }}
             >
               Về Trang Quản Lý Đơn Hàng Bán

@@ -9,7 +9,9 @@ import {
   CTableHeaderCell,
   CTableBody,
   CTableDataCell,
-  CBadge
+  CBadge,
+  CButtonGroup,
+  CButton,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilLibrary } from '@coreui/icons'
@@ -27,6 +29,7 @@ const formatDate = (isoString) => {
 const Cashbook = () => {
   const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(true)
+  const [filterType, setFilterType] = useState('ALL') // ALL, INCOME, EXPENSE
 
   useEffect(() => {
     fetchCashbook()
@@ -69,8 +72,29 @@ const Cashbook = () => {
 
   return (
     <CCard className="mb-4 shadow-sm border-top-info border-top-3">
-      <CCardHeader className="bg-white pb-0 d-flex justify-content-between align-items-center">
-        <h5 className="mb-3 text-info"><CIcon icon={cilLibrary} className="me-2"/>Sổ Quỹ Tiền Mặt & Ngân Hàng</h5>
+      <CCardHeader className="bg-white py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <h5 className="mb-3 mb-md-0 text-info"><CIcon icon={cilLibrary} className="me-2" />Sổ Quỹ Tiền Mặt & Ngân Hàng</h5>
+        
+        <CButtonGroup role="group" aria-label="Lọc dòng tiền">
+          <CButton 
+            color={filterType === 'ALL' ? 'dark' : 'outline-dark'} 
+            onClick={() => setFilterType('ALL')}
+          >
+            Tất cả
+          </CButton>
+          <CButton 
+            color={filterType === 'INCOME' ? 'success' : 'outline-success'} 
+            onClick={() => setFilterType('INCOME')}
+          >
+            Lịch sử Thu
+          </CButton>
+          <CButton 
+            color={filterType === 'EXPENSE' ? 'danger' : 'outline-danger'} 
+            onClick={() => setFilterType('EXPENSE')}
+          >
+            Lịch sử Chi
+          </CButton>
+        </CButtonGroup>
       </CCardHeader>
       <CCardBody>
         {loading ? (
@@ -91,7 +115,9 @@ const Cashbook = () => {
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {payments.map(p => (
+              {payments
+                .filter(p => filterType === 'ALL' || p.type === filterType)
+                .map(p => (
                 <CTableRow key={p.id}>
                   <CTableDataCell className="small text-muted">{formatDate(p.createdAt)}</CTableDataCell>
                   <CTableDataCell className="fw-bold">{p.code}</CTableDataCell>
@@ -100,10 +126,21 @@ const Cashbook = () => {
                     {p.partner?.name || 'Khách vãng lai/Khác'}
                   </CTableDataCell>
                   <CTableDataCell className="small">{renderReference(p)}</CTableDataCell>
-                  <CTableDataCell>{p.method}</CTableDataCell>
+                  <CTableDataCell>
+                    {p.method === 'CASH' ? 'Tiền mặt' :
+                      (p.method === 'BANK_TRANSFER' ? 'Chuyển khoản' :
+                        (p.method === 'CARD' ? 'Quẹt thẻ' : p.method))}
+                  </CTableDataCell>
                   <CTableDataCell className="text-end fs-6">{renderAmount(p)}</CTableDataCell>
                 </CTableRow>
               ))}
+              {payments.filter(p => filterType === 'ALL' || p.type === filterType).length === 0 && (
+                <CTableRow>
+                  <CTableDataCell colSpan={7} className="text-center text-muted py-4">
+                    Không có giao dịch nào ở trạng thái này.
+                  </CTableDataCell>
+                </CTableRow>
+              )}
             </CTableBody>
           </CTable>
         )}

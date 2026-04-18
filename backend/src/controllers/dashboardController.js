@@ -237,6 +237,134 @@ const dashboardController = {
       console.error("Lỗi getChartData:", e);
       res.status(500).json({ message: 'Lỗi lấy dữ liệu biểu đồ' });
     }
+  },
+
+  getWeeklySales: async (req, res) => {
+    try {
+      const days = [];
+      const now = new Date();
+      now.setHours(23, 59, 59, 999);
+
+      const weekdays = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        const title = i === 0 ? 'Hôm nay' : weekdays[d.getDay()];
+        days.push({
+          dateStr,
+          title,
+          revenue: 0,
+          profit: 0,
+          orders: 0
+        });
+      }
+
+      const startOfPeriod = new Date();
+      startOfPeriod.setDate(startOfPeriod.getDate() - 6);
+      startOfPeriod.setHours(0, 0, 0, 0);
+
+      const allOrders = await prisma.order.findMany({
+        where: {
+          createdAt: { gte: startOfPeriod, lte: now }
+        },
+        include: {
+          items: {
+            include: { batch: true, variant: { include: { product: true } } }
+          }
+        }
+      });
+
+      const ordersList = allOrders.filter(o => o.status !== 'CANCELLED');
+
+      ordersList.forEach(order => {
+        const d = new Date(order.createdAt);
+        const dateStr = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        const targetDay = days.find(day => day.dateStr === dateStr);
+        if (targetDay) {
+          const rev = Number(order.finalAmount || 0);
+          
+          let cogs = 0;
+          if (order.items) {
+            order.items.forEach(item => {
+              const importPrice = item.batch?.importPrice ? Number(item.batch.importPrice) : (item.variant?.importPrice ? Number(item.variant.importPrice) : 0);
+              cogs += importPrice * item.quantity;
+            });
+          }
+          
+          targetDay.revenue += rev;
+          targetDay.profit += (rev - cogs);
+          targetDay.orders += 1;
+        }
+      });
+
+      // Thống kê Đại lý mới & Quay lại trong tuần (chỉ tính có phát sinh đơn)
+      const customerIdsInPeriod = [...new Set(ordersList.map(o => o.customerId))];
+      let newAgents = 0;
+      let returningAgents = 0;
+
+      for (const cid of customerIdsInPeriod) {
+        const pastOrdersCount = await prisma.order.count({
+          where: {
+            customerId: cid,
+            createdAt: { lt: startOfPeriod },
+            status: { not: 'CANCELLED' }
+          }
+        });
+        if (pastOrdersCount === 0) {
+          newAgents++;
+        } else {
+          returningAgents++;
+        }
+      }
+
+      const totalOrdersCountPeriod = allOrders.length;
+      const validOrdersCount = ordersList.length;
+      const conversionRate = totalOrdersCountPeriod === 0 ? 0 : ((validOrdersCount / totalOrdersCountPeriod) * 100).toFixed(1);
+
+      // Top 5 Products by Revenue
+      const productRevenueMap = {};
+      let totalValidRevenueInPeriod = 0;
+
+      ordersList.forEach(order => {
+        if (order.items) {
+          order.items.forEach(item => {
+            const productName = item.variant?.product?.name || `Sản phẩm ${item.variant?.productId || 'N/A'}`;
+            const itemRev = Number(item.price) * item.quantity;
+            totalValidRevenueInPeriod += itemRev;
+            if (!productRevenueMap[productName]) {
+              productRevenueMap[productName] = 0;
+            }
+            productRevenueMap[productName] += itemRev;
+          });
+        }
+      });
+
+      const colors = ['success', 'info', 'warning', 'danger', 'primary'];
+      
+      const topProducts = Object.entries(productRevenueMap)
+        .map(([title, revenue]) => ({
+          title,
+          revenue,
+          percent: totalValidRevenueInPeriod === 0 ? 0 : Number(((revenue / totalValidRevenueInPeriod) * 100).toFixed(1))
+        }))
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5)
+        .map((p, idx) => ({ ...p, color: colors[idx % colors.length] }));
+
+      res.status(200).json({ 
+        days: days, 
+        newAgents, 
+        returningAgents,
+        totalOrdersCount: totalOrdersCountPeriod,
+        conversionRate: conversionRate,
+        topProducts: topProducts
+      });
+    } catch (e) {
+      console.error("Lỗi getWeeklySales:", e);
+      res.status(500).json({ message: 'Lỗi lấy dữ liệu bán hàng 7 ngày' });
+    }
   }
 };
 

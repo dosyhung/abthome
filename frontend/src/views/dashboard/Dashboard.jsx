@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import classNames from 'classnames'
+import axiosClient from '../../api/axiosClient'
 
 import {
   CAvatar,
@@ -43,23 +44,36 @@ const Dashboard = () => {
     { title: 'Bounce Rate', value: 'Average Rate', percent: 40.15, color: 'primary' },
   ]
 
-  const progressGroupExample1 = [
-    { title: 'Thứ 2', value1: 85, value1Display: '25.500.000 ₫', value2: 78, value2Display: '120 Đơn' },
-    { title: 'Thứ 3', value1: 94, value1Display: '32.100.000 ₫', value2: 91, value2Display: '145 Đơn' },
-    { title: 'Thứ 4', value1: 52, value1Display: '15.600.000 ₫', value2: 67, value2Display: '89 Đơn' },
-    { title: 'Thứ 5', value1: 65, value1Display: '19.800.000 ₫', value2: 73, value2Display: '105 Đơn' },
-    { title: 'Thứ 6', value1: 45, value1Display: '13.200.000 ₫', value2: 41, value2Display: '62 Đơn' },
-    { title: 'Thứ 7', value1: 22, value1Display: '6.400.000 ₫', value2: 25, value2Display: '34 Đơn' },
-    { title: 'Chủ Nhật', value1: 15, value1Display: '4.200.000 ₫', value2: 12, value2Display: '18 Đơn' },
-  ]
+  const [weeklySalesData, setWeeklySalesData] = useState([])
+  const [maxWeeklyRevenue, setMaxWeeklyRevenue] = useState(0)
+  const [maxWeeklyOrders, setMaxWeeklyOrders] = useState(0)
+  const [agentStats, setAgentStats] = useState({ new: 0, returning: 0 })
+  const [topProducts, setTopProducts] = useState([])
+  const [periodTotalOrders, setPeriodTotalOrders] = useState(0)
+  const [periodConversionRate, setPeriodConversionRate] = useState(0)
 
-  const topProducts = [
-    { title: 'Tấm ốp Nano ABT', percent: 85, color: 'success' },
-    { title: 'Nẹp góc chữ V', percent: 65, color: 'info' },
-    { title: 'Tấm ốp than tre', percent: 45, color: 'warning' },
-    { title: 'Phào chỉ trần', percent: 30, color: 'danger' },
-    { title: 'Keo PUR/EVA', percent: 15, color: 'primary' },
-  ]
+  useEffect(() => {
+    const fetchWeeklySales = async () => {
+      try {
+        const payload = await axiosClient.get('/dashboard/weekly-sales')
+        if (payload && payload.days && Array.isArray(payload.days)) {
+          setWeeklySalesData(payload.days)
+          const maxRev = Math.max(...payload.days.map(d => d.revenue), 1) 
+          const maxOrd = Math.max(...payload.days.map(d => d.orders), 1)
+          setMaxWeeklyRevenue(maxRev)
+          setMaxWeeklyOrders(maxOrd)
+          
+          setAgentStats({ new: payload.newAgents, returning: payload.returningAgents })
+          setPeriodTotalOrders(payload.totalOrdersCount || 0)
+          setPeriodConversionRate(payload.conversionRate || 0)
+          setTopProducts(payload.topProducts || [])
+        }
+      } catch (e) {
+        console.error("Failed to load weekly sales", e)
+      }
+    }
+    fetchWeeklySales()
+  }, [])
 
   const rawSalesData = [
     { id: 1, avatar: avatar1, name: 'Trần Văn An', orderCount: 185, totalRevenue: 650000000 },
@@ -80,7 +94,21 @@ const Dashboard = () => {
               <h4 id="traffic" className="card-title mb-0">
                 Biểu Đồ Theo Dõi
               </h4>
-              <div className="small text-body-secondary">Báo cáo đa chiều theo: {chartTimeFilter === 'Day' ? 'Hôm nay' : (chartTimeFilter === 'Month' ? 'Tháng này' : 'Năm nay')}</div>
+              <div className="small text-body-secondary mb-3">Báo cáo đa chiều theo: {chartTimeFilter === 'Day' ? 'Hôm nay' : (chartTimeFilter === 'Month' ? 'Tháng này' : 'Năm nay')}</div>
+              <div className="d-flex flex-wrap gap-4 small fw-bold">
+                <div className="text-info d-flex align-items-center">
+                  <span className="d-inline-block bg-info rounded-circle me-2" style={{ width: '10px', height: '10px' }}></span> 
+                  Doanh thu
+                </div>
+                <div className="text-success d-flex align-items-center">
+                  <span className="d-inline-block bg-success rounded-circle me-2" style={{ width: '10px', height: '10px' }}></span> 
+                  Lãi gộp
+                </div>
+                <div className="text-danger d-flex align-items-center">
+                  <span className="d-inline-block border-danger border-bottom border-2 me-2" style={{ width: '15px', borderBottomStyle: 'dashed' }}></span> 
+                  Số lượng đơn xuất
+                </div>
+              </div>
             </CCol>
             <CCol sm={7} className="d-none d-md-block">
               <CButton color="primary" className="float-end">
@@ -120,7 +148,7 @@ const Dashboard = () => {
                     <CCol xs={6}>
                       <div className="border-start border-start-4 border-start-info py-1 px-3">
                         <div className="text-body-secondary text-truncate small">Đại lý mới</div>
-                        <div className="fs-5 fw-semibold">123</div>
+                        <div className="fs-5 fw-semibold">{agentStats.new}</div>
                       </div>
                     </CCol>
                     <CCol xs={6}>
@@ -128,38 +156,51 @@ const Dashboard = () => {
                         <div className="text-body-secondary text-truncate small">
                           Đại lý quay lại
                         </div>
-                        <div className="fs-5 fw-semibold">431</div>
+                        <div className="fs-5 fw-semibold">{agentStats.returning}</div>
                       </div>
                     </CCol>
                   </CRow>
                   <hr className="mt-0" />
 
                   <div className="d-flex justify-content-between mb-4 small">
-                    <div>
+                    <div className="text-body-secondary">
                       <span className="d-inline-block bg-info rounded-circle me-2" style={{ width: '10px', height: '10px' }}></span>
-                      Doanh thu (VNĐ)
+                      Doanh thu 
+                      <span className="d-inline-block bg-success rounded-circle ms-3 me-2" style={{ width: '10px', height: '10px' }}></span>
+                      Lãi gộp
                     </div>
-                    <div>
+                    <div className="text-body-secondary">
                       <span className="d-inline-block bg-danger rounded-circle me-2" style={{ width: '10px', height: '10px' }}></span>
-                      Số lượng đơn xuất (Đơn)
+                      SL hóa đơn
                     </div>
                   </div>
 
-                  {progressGroupExample1.map((item, index) => (
-                    <div className="progress-group mb-4" key={index}>
-                      <div className="progress-group-prepend">
-                        <span className="text-body-secondary small fw-bold">{item.title}</span>
-                      </div>
-                      <div className="progress-group-bars">
-                        <div className="d-flex justify-content-between small text-body-secondary mb-1">
-                          <span>{item.value1Display}</span>
-                          <span>{item.value2Display}</span>
+                  {weeklySalesData && weeklySalesData.length > 0 ? weeklySalesData.map((item, index) => {
+                    const revPercent = (item.revenue / maxWeeklyRevenue) * 100
+                    const proPercent = Math.max((item.profit / maxWeeklyRevenue) * 100, 0) // Ngăn thanh xanh âm
+                    const ordPercent = (item.orders / maxWeeklyOrders) * 100
+                    return (
+                      <div className="progress-group mb-4" key={index}>
+                        <div className="progress-group-prepend">
+                          <span className="text-body-secondary small fw-bold">{item.title}</span>
+                          <span className="text-success small fw-bold mt-1 d-block" style={{fontSize: '0.74rem'}}>
+                            {item.profit >= 0 ? '+' : ''}{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(item.profit)}
+                          </span>
                         </div>
-                        <CProgress thin color="info" value={item.value1} />
-                        <CProgress thin color="danger" value={item.value2} />
+                        <div className="progress-group-bars d-flex flex-column justify-content-center">
+                          <div className="d-flex justify-content-between small text-body-secondary mb-1">
+                            <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(item.revenue)}</span>
+                            <span>{item.orders} Đơn</span>
+                          </div>
+                          <CProgress thin color="info" value={revPercent} />
+                          <CProgress thin color="success" value={proPercent} className="mt-1" />
+                          <CProgress thin color="danger" value={ordPercent} className="mt-1" />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  }) : (
+                    <div className="text-center text-muted small mt-4 pb-4">Đang tải dữ liệu thực tế 7 ngày gần nhất...</div>
+                  )}
                 </CCol>
                 <CCol xs={12} md={6} xl={6}>
                   <div className="fs-5 fw-semibold mb-4">Top 5 Sản Phẩm Bán Chạy Nhất</div>
@@ -167,20 +208,20 @@ const Dashboard = () => {
                     <CCol xs={6}>
                       <div className="border-start border-start-4 border-start-warning py-1 px-3 mb-3">
                         <div className="text-body-secondary text-truncate small">Tổng đơn hàng</div>
-                        <div className="fs-5 fw-semibold">1,250</div>
+                        <div className="fs-5 fw-semibold">{periodTotalOrders}</div>
                       </div>
                     </CCol>
                     <CCol xs={6}>
                       <div className="border-start border-start-4 border-start-success py-1 px-3 mb-3">
                         <div className="text-body-secondary text-truncate small">Tỷ lệ chốt</div>
-                        <div className="fs-5 fw-semibold">68.5%</div>
+                        <div className="fs-5 fw-semibold">{periodConversionRate}%</div>
                       </div>
                     </CCol>
                   </CRow>
 
                   <hr className="mt-0" />
 
-                  {topProducts.map((item, index) => (
+                  {topProducts.length > 0 ? topProducts.map((item, index) => (
                     <div className="progress-group mb-4" key={index}>
                       <div className="progress-group-header">
                         <span className="title fw-semibold">{item.title}</span>
@@ -190,7 +231,9 @@ const Dashboard = () => {
                         <CProgress thin color={item.color} value={item.percent} />
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-center text-muted small mt-4 pb-4">Đang tải dữ liệu sản phẩm...</div>
+                  )}
                 </CCol>
               </CRow>
 

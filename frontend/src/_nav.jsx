@@ -100,12 +100,6 @@ const _nav = [
     items: [
       {
         component: CNavItem,
-        name: 'Quản lý Danh Mục',
-        to: '/products/categories',
-        icon: <Tag size={20} weight="duotone" className="nav-icon text-primary" style={{ opacity: 0.8 }} />,
-      },
-      {
-        component: CNavItem,
         name: 'Danh sách Phiếu Nhập',
         to: '/inventory/list',
         icon: <ClockCounterClockwise size={20} weight="duotone" className="nav-icon text-primary" style={{ opacity: 0.8 }} />,
@@ -153,12 +147,12 @@ const _nav = [
   },
   {
     component: CNavGroup,
-    name: 'Tài chính & Sổ quỹ',
+    name: 'Sổ Quỹ Kế Toán',
     icon: <Bank size={24} weight="duotone" className="nav-icon text-danger" />,
     items: [
       {
         component: CNavItem,
-        name: 'Sổ Lịch sử Thu/Chi',
+        name: 'Sổ Quỹ Thu / Chi',
         to: '/cashbook',
         icon: <ClockCounterClockwise size={20} weight="duotone" className="nav-icon text-danger" style={{ opacity: 0.8 }} />,
       },

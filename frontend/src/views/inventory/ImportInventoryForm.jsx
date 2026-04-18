@@ -149,12 +149,12 @@ const ImportInventoryForm = () => {
       }
 
       const response = await axiosClient.post('/inventory/import', payload)
-      addToast(showSuccessToast(`Tạo phiếu nhập thành công! Mã: ${response.data?.code || ''}`));
+      addToast(showSuccessToast(`Tạo phiếu nhập thành công! Hệ thống tự chuyển hướng sang trang thanh toán...`));
       
-      // Reset Form
-      setPartnerId('');
-      setNote('');
-      setItems([{ id: Date.now(), variantId: '', quantity: 1, unitPrice: 0, batchNumber: '', expiryDate: '' }]);
+      // Auto-redirect to the supplier debt page to process payment for this new invoice
+      setTimeout(() => {
+        navigate('/partners/supplier-debt');
+      }, 1500)
       
     } catch (error) {
       console.error('Lưu phiếu thất bại:', error);

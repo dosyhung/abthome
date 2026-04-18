@@ -12,6 +12,14 @@ const inventoryController = {
           },
           partner: {
             select: { name: true }
+          },
+          details: {
+            include: {
+              variant: {
+                include: { product: true }
+              },
+              batch: true
+            }
           }
         }
       });
@@ -115,6 +123,14 @@ const inventoryController = {
               importPrice: item.unitPrice 
             }
           });
+        }
+
+        // Cập nhật công nợ cho nhà cung cấp
+        if (partnerId) {
+          await tx.partner.update({
+            where: { id: parseInt(partnerId) },
+            data: { debtBalance: { increment: totalAmount } }
+          })
         }
 
         return transaction;
