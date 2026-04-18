@@ -64,6 +64,33 @@ const _nav = [
   },
   {
     component: CNavTitle,
+    name: 'Quản Sản Phẩm',
+  },
+  {
+    component: CNavGroup,
+    name: 'Quản Lý Sản Phẩm',
+    icon: <Package size={24} weight="duotone" className="nav-icon text-primary" />,
+    items: [
+      {
+        component: CNavItem,
+        name: 'Quản Lý Sản Phẩm',
+        to: '/products/list',
+        icon: <Stack size={20} weight="duotone" className="nav-icon text-primary" style={{ opacity: 0.8 }} />,
+      },
+    ],
+  },
+  {
+    component: CNavTitle,
+    name: 'Quản Lý Danh Mục',
+  },
+  {
+    component: CNavItem,
+    name: 'Danh Mục Sản Phẩm',
+    to: '/products/categories',
+    icon: <Tag size={20} weight="duotone" className="nav-icon text-primary" style={{ opacity: 0.8 }} />,
+  },
+  {
+    component: CNavTitle,
     name: 'Quản Lý Kho',
   },
   {
@@ -76,12 +103,6 @@ const _nav = [
         name: 'Quản lý Danh Mục',
         to: '/products/categories',
         icon: <Tag size={20} weight="duotone" className="nav-icon text-primary" style={{ opacity: 0.8 }} />,
-      },
-      {
-        component: CNavItem,
-        name: 'Quản Lý Sản Phẩm',
-        to: '/products/list',
-        icon: <Stack size={20} weight="duotone" className="nav-icon text-primary" style={{ opacity: 0.8 }} />,
       },
       {
         component: CNavItem,

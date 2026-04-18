@@ -13,12 +13,18 @@ import {
   CBadge,
   CCollapse,
   CAlert,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
+  CSpinner,
 } from '@coreui/react'
 import { useNavigate, useLocation } from 'react-router-dom'
 // Nếu không tìm thấy CIcon thì comment out hoặc cài đặt bổ sung thư viện @coreui/icons-react
 // Ở đây tôi dùng text thay thế nếu dự án chưa import đúng icon, hoặc giữ CIcon nếu đã cài
 import CIcon from '@coreui/icons-react'
-import { cilPlus, cilChevronBottom, cilChevronRight, cilTrash, cilPencil } from '@coreui/icons'
+import { cilPlus, cilChevronBottom, cilChevronRight, cilTrash, cilPencil, cilWarning } from '@coreui/icons'
 import axiosClient from '../../api/axiosClient'
 
 // ===============================================
@@ -29,6 +35,7 @@ const ProductList = () => {
   const location = useLocation()
   const [products, setProducts] = useState([])
   const [alertMessage, setAlertMessage] = useState(location.state?.successMessage || '')
+  const [errorAlert, setErrorAlert] = useState('')
 
   useEffect(() => {
     if (alertMessage) {
@@ -38,8 +45,21 @@ const ProductList = () => {
       return () => clearTimeout(t)
     }
   }, [alertMessage])
+
+  useEffect(() => {
+    if (errorAlert) {
+      const t = setTimeout(() => setErrorAlert(''), 6000)
+      return () => clearTimeout(t)
+    }
+  }, [errorAlert])
+
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState([]) // Lưu ID của các dòng đang được mở rộng
+
+  // State chuyên dùng cho Modal Cảnh báo Xóa
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [productToDelete, setProductToDelete] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Component Did Mount
   useEffect(() => {
@@ -68,19 +88,30 @@ const ProductList = () => {
     }
   }
 
-  const handleDelete = async (id, e) => {
+  // Helper kích hoạt Pop-up thay vì dùng hàm xóa trực tiếp
+  const triggerDelete = (product, e) => {
     e.stopPropagation()
-    if (window.confirm('CẢNH BÁO: \nBạn có chắc chắn muốn xóa sản phẩm này?\nThao tác này sẽ bị chặn nếu sản phẩm đã phát sinh kho/bán hàng.')) {
-      try {
-        setLoading(true)
-        await axiosClient.delete(`/products/${id}`)
-        setProducts(products.filter(p => p.id !== id))
-        setAlertMessage('Đã xóa sản phẩm thành công!')
-      } catch (error) {
-        alert(error.response?.data?.message || 'Có lỗi xảy ra khi xóa sản phẩm')
-      } finally {
-        setLoading(false)
-      }
+    setProductToDelete(product)
+    setDeleteModalVisible(true)
+  }
+
+  // Thực thi Delete khi bấm Click Đồng ý trên Modal 
+  const executeDelete = async () => {
+    if (!productToDelete) return
+    try {
+      setIsDeleting(true)
+      await axiosClient.delete(`/products/${productToDelete.id}`)
+      setProducts(products.filter(p => p.id !== productToDelete.id))
+      setAlertMessage('Đã xóa sản phẩm thành công!')
+      setDeleteModalVisible(false) // Đóng ngay lập tức nếu thành công
+      setProductToDelete(null)
+    } catch (error) {
+      setErrorAlert(error.response?.data?.message || 'Có lỗi xảy ra khi xóa sản phẩm')
+      // Đóng hộp thoại modal và giữ nguyên ở danh sách SP
+      setDeleteModalVisible(false)
+      setProductToDelete(null)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -100,6 +131,12 @@ const ProductList = () => {
       {alertMessage && (
         <CAlert color="success" dismissible onClose={() => setAlertMessage('')}>
           {alertMessage}
+        </CAlert>
+      )}
+      {errorAlert && (
+        <CAlert color="danger" dismissible onClose={() => setErrorAlert('')} className="d-flex align-items-center gap-2 mb-3">
+          <CIcon icon={cilWarning} size="lg"/>
+          <div>{errorAlert}</div>
         </CAlert>
       )}
       <CCard className="mb-4">
@@ -154,7 +191,7 @@ const ProductList = () => {
                           <CButton color="info" variant="ghost" size="sm" className="p-1 px-2 d-flex align-items-center gap-1" onClick={(e) => { e.stopPropagation(); navigate(`/products/edit/${product.id}`) }}>
                             <CIcon icon={cilPencil} size="sm" /> Sửa
                           </CButton>
-                          <CButton color="danger" variant="ghost" size="sm" className="p-1 px-2 d-flex align-items-center gap-1" onClick={(e) => handleDelete(product.id, e)}>
+                          <CButton color="danger" variant="ghost" size="sm" className="p-1 px-2 d-flex align-items-center gap-1" onClick={(e) => triggerDelete(product, e)}>
                             <CIcon icon={cilTrash} size="sm" /> Xóa
                           </CButton>
                         </div>
@@ -229,6 +266,38 @@ const ProductList = () => {
         )}
       </CCardBody>
       </CCard>
+
+      {/* HIỂN THỊ HỘP THOẠI CONFIRM XÓA */}
+      <CModal backdrop="static" visible={deleteModalVisible} onClose={() => setDeleteModalVisible(false)}>
+        <CModalHeader className="bg-danger border-0">
+          <CModalTitle className="d-flex align-items-center gap-2 text-white">
+            <CIcon icon={cilWarning} size="xl" />
+            Cảnh báo rủi ro dữ liệu
+          </CModalTitle>
+        </CModalHeader>
+        <CModalBody className="p-4 text-center">
+          <h5 className="mb-3 text-dark">Bạn có chắc chắn muốn xóa vĩnh viễn mặt hàng này?</h5>
+          {productToDelete && (
+            <p className="fs-5 text-danger fw-bold border p-2 mb-3 bg-light rounded">
+              [{productToDelete.code}] {productToDelete.name}
+            </p>
+          )}
+          <p className="text-muted small mb-0">
+            Thao tác này <strong>không thể hoàn tác</strong> và mọi thông số biến thể đính kèm sẽ bị gỡ bỏ.<br/>
+            (Hệ thống tự động chặn nếu sản phẩm này đã từng nhập kho hoặc phát sinh giao dịch).
+          </p>
+        </CModalBody>
+        <CModalFooter className="justify-content-center border-0 pb-4">
+          <CButton color="secondary" variant="ghost" onClick={() => setDeleteModalVisible(false)}>
+            Hủy bỏ
+          </CButton>
+          <CButton color="danger" onClick={executeDelete} disabled={isDeleting} className="px-4 text-white shadow-sm">
+            {isDeleting ? (
+              <><CSpinner size="sm" className="me-2" /> Đang xóa...</>
+            ) : 'Đồng ý Xóa'}
+          </CButton>
+        </CModalFooter>
+      </CModal>
     </>
   )
 }

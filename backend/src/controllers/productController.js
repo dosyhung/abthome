@@ -48,13 +48,13 @@ const productController = {
         },
         orderBy: { sku: 'asc' }
       });
-      
+
       // Map lại để ghép thêm trường name từ bảng cha cho dễ xài ở frontend
       const mappedVariants = variants.map(v => ({
         ...v,
         name: v.product ? v.product.name : 'N/A'
       }));
-      
+
       res.status(200).json(mappedVariants);
     } catch (error) {
       res.status(500).json({ message: 'Lỗi khi tải danh sách biến thể', error: error.message });
@@ -86,7 +86,7 @@ const productController = {
           nextNumber = parseInt(match[1], 10) + 1;
         } else {
           // Fallback
-          nextNumber = lastProduct.id + 1; 
+          nextNumber = lastProduct.id + 1;
         }
       }
       const generatedCode = `SP${nextNumber.toString().padStart(2, '0')}`;
@@ -96,13 +96,13 @@ const productController = {
         // Mã con sẽ trùng mã mẹ nếu chỉ có 1 biến thể, nếu >1 thì nối đuôi
         let autoSku = generatedCode;
         if (variants.length > 1) {
-           autoSku = `${generatedCode}-${index + 1}`;
+          autoSku = `${generatedCode}-${index + 1}`;
         }
         autoSku = v.sku || autoSku;
 
         // Nếu client truyền "Màu Đen, L" dưới dạng chuỗi `attributes`
-        const attributesJson = typeof v.attributes === 'string' 
-          ? { details: v.attributes } 
+        const attributesJson = typeof v.attributes === 'string'
+          ? { details: v.attributes }
           : (v.attributes || { details: "Mặc định" });
 
         return {
@@ -176,14 +176,14 @@ const productController = {
       const mappedVariants = variants.map((v, i) => {
         let autoSku = generatedCode;
         if (variants.length > 1) {
-           autoSku = `${generatedCode}-${i + 1}`;
+          autoSku = `${generatedCode}-${i + 1}`;
         }
         autoSku = v.sku || autoSku;
 
-        const attributesJson = typeof v.attributes === 'string' 
-          ? { details: v.attributes } 
+        const attributesJson = typeof v.attributes === 'string'
+          ? { details: v.attributes }
           : (v.attributes || { details: "Mặc định" });
-          
+
         return {
           where: { sku: autoSku },
           create: {
@@ -215,7 +215,7 @@ const productController = {
             inventoryItems: true
           }
         });
-        
+
         for (const ev of existingVariants) {
           if (!incomingSkus.includes(ev.sku)) {
             if (ev.batches.length > 0 || ev.orderItems.length > 0 || ev.inventoryItems.length > 0) {
@@ -233,7 +233,7 @@ const productController = {
             description: description || null,
             categoryId: parseInt(categoryId),
             variants: {
-               upsert: mappedVariants
+              upsert: mappedVariants
             }
           },
           include: {
@@ -266,8 +266,8 @@ const productController = {
 
       for (let v of variants) {
         if (v.batches.length > 0 || v.orderItems.length > 0 || v.inventoryItems.length > 0) {
-          return res.status(400).json({ 
-            message: `Sản phẩm này chứa biến thể (SKU: ${v.sku}) đã phát sinh dữ liệu Kho/Đơn hàng. KHÔNG THỂ XÓA để bảo toàn tính nguyên vẹn dữ liệu kế toán.`
+          return res.status(400).json({
+            message: `Sản phẩm này đã phát sinh dữ liệu Kho/Đơn hàng. KHÔNG THỂ XÓA để bảo toàn tính nguyên vẹn dữ liệu kế toán.`
           });
         }
       }
@@ -276,7 +276,7 @@ const productController = {
         await tx.productVariant.deleteMany({
           where: { productId: parseInt(id) }
         });
-        
+
         await tx.product.delete({
           where: { id: parseInt(id) }
         });
