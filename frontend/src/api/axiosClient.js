@@ -31,6 +31,13 @@ axiosClient.interceptors.response.use(
     },
     (error) => {
         // Xử lý lỗi chung (ví dụ: văng ra trang login nếu token hết hạn)
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            if (window.location.hash !== '#/login') {
+                window.location.href = '#/login';
+            }
+        }
         console.error('API Error:', error);
         return Promise.reject(error);
     }

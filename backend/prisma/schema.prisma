@@ -28,6 +28,7 @@ model User {
   orders      Order[]
   inventories InventoryTransaction[]
   stocktakes  Stocktake[]
+  partners    Partner[]
 }
 
 model Role {
@@ -116,6 +117,9 @@ model Partner {
   orders      Order[]
   inventories InventoryTransaction[]
   payments    Payment[]
+
+  assignedToId Int?
+  assignedTo   User?   @relation(fields: [assignedToId], references: [id])
 }
 
 enum PartnerType {

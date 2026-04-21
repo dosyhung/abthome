@@ -123,6 +123,12 @@ const _nav = [
     items: [
       {
         component: CNavItem,
+        name: 'Quản lý Khách Hàng',
+        to: '/partners/customers',
+        icon: <Users size={20} weight="duotone" className="nav-icon text-success" style={{ opacity: 0.8 }} />,
+      },
+      {
+        component: CNavItem,
         name: 'Danh sách Nhà Cung Cấp',
         to: '/partners/suppliers',
         icon: <Buildings size={20} weight="duotone" className="nav-icon text-success" style={{ opacity: 0.8 }} />,

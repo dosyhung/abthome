@@ -43,9 +43,9 @@ const Login = () => {
     setIsSubmitting(true)
     try {
       const response = await axiosInstance.post('/auth/login', { email, password })
-      
+
       const { user, token } = response.data.data
-      
+
       // Lưu vào Context và LocalStorage (được xử lý trong AuthContext)
       login(user, token)
 
@@ -71,9 +71,9 @@ const Login = () => {
               <CCard className="p-4">
                 <CCardBody>
                   <CForm onSubmit={handleLogin}>
-                    <h2 className="text-primary fw-bold">Hệ thống Quản Trị (ERP)</h2>
-                    <p className="text-body-secondary">Đăng nhập bằng Email công việc của bạn</p>
-                    
+                    <h2 className="text-primary fw-bold">Hệ thống Quản Trị</h2>
+                    <p className="text-body-secondary">Đăng nhập bằng Email</p>
+
                     {errorMsg && (
                       <div className="alert alert-danger p-2 small mb-3">
                         {errorMsg}
@@ -84,9 +84,9 @@ const Login = () => {
                       <CInputGroupText>
                         <CIcon icon={cilEnvelopeClosed} />
                       </CInputGroupText>
-                      <CFormInput 
-                        placeholder="Email" 
-                        autoComplete="username" 
+                      <CFormInput
+                        placeholder="Email"
+                        autoComplete="username"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                       />
@@ -121,7 +121,7 @@ const Login = () => {
               <CCard className="text-white bg-primary py-5 d-none d-md-flex align-items-center justify-content-center" style={{ width: '44%' }}>
                 <CCardBody className="text-center d-flex flex-column justify-content-center">
                   <div>
-                    <h3 className="fw-bold">APPABT ERP</h3>
+                    <h3 className="fw-bold">HỆ THỐNG QUẢN TRỊ TOPHOME.VN</h3>
                     <p className="mt-3 opacity-75">
                       Hệ thống Quản trị Doanh nghiệp Khép kín. Vui lòng không chia sẻ tài khoản cho người ngoài nội bộ công ty.
                     </p>

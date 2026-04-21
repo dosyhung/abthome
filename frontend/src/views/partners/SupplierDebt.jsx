@@ -26,6 +26,7 @@ import {
   CBadge
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
+import axiosClient from '../../api/axiosClient'
 import { cilMoney, cilBuilding, cilCheckCircle } from '@coreui/icons'
 
 const formatCurrency = (value) => {
@@ -58,11 +59,8 @@ const SupplierDebt = () => {
   const fetchSuppliers = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/payments/partners/debt?type=SUPPLIER')
-      if (res.ok) {
-        const data = await res.json()
-        setSuppliers(data)
-      }
+      const res = await axiosClient.get('/payments/partners/debt?type=SUPPLIER')
+      setSuppliers(Array.isArray(res) ? res : res?.data || [])
     } catch (e) {
       console.error(e)
     } finally {
@@ -78,11 +76,8 @@ const SupplierDebt = () => {
     setPayAmount('')
 
     try {
-      const res = await fetch(`/api/payments/partners/${supplier.id}/unpaid-imports`)
-      if (res.ok) {
-        const importsList = await res.json()
-        setUnpaidImports(importsList)
-      }
+      const res = await axiosClient.get(`/payments/partners/${supplier.id}/unpaid-imports`)
+      setUnpaidImports(Array.isArray(res) ? res : res?.data || [])
     } catch (e) {
       console.error(e)
     }
@@ -115,29 +110,19 @@ const SupplierDebt = () => {
     }
 
     try {
-      const res = await fetch('/api/payments/pay', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(bodyArgs)
-      })
+      await axiosClient.post('/payments/pay', bodyArgs)
 
-      if (res.ok) {
-        setVisible(false) // Đóng Modal Thanh toán
-        setSuccessModalVisible(true) // Bật Modal Thành công xanh lè
+      setVisible(false) // Đóng Modal Thanh toán
+      setSuccessModalVisible(true) // Bật Modal Thành công xanh lè
 
-        // Trễ 2.5s để người dùng đọc thông điệp ngầu rồi bay nhảy qua Sổ Quỹ
-        setTimeout(() => {
-          navigate('/cashbook')
-        }, 2200)
-      } else {
-        const errorData = await res.json()
-        alert(`Lỗi: ${errorData.message || 'Không thể chi tiền'}`)
-      }
+      // Trễ 2.5s để người dùng đọc thông điệp ngầu rồi bay nhảy qua Sổ Quỹ
+      setTimeout(() => {
+        navigate('/cashbook')
+      }, 2200)
+
     } catch (error) {
       console.error(error)
-      alert("Đã xảy ra lỗi mạng!")
+      alert(`Lỗi: ${error.response?.data?.message || 'Không thể chi tiền'}`)
     }
   }
 

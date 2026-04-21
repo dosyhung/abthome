@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const paymentController = require('../controllers/paymentController');
+const { verifyToken } = require('../middlewares/authMiddleware');
+
+router.use(verifyToken);
 
 // Quản lý Đối tác & Nợ
 router.get('/partners/debt', paymentController.getPartnersWithDebt);

@@ -5,12 +5,23 @@ const paymentController = {
   getPartnersWithDebt: async (req, res) => {
     try {
       const { type } = req.query; // 'CUSTOMER' hoặc 'SUPPLIER'
+      const filter = {
+        type: type,
+        debtBalance: { gt: 0 }
+      };
+
+      const role = await prisma.role.findUnique({ where: { id: req.user.roleId } });
+      const permissions = typeof role.permissions === 'string' ? JSON.parse(role.permissions || '[]') : (role.permissions || []);
+      const isAdmin = permissions.includes('ALL_ACCESS');
+
+      if (!isAdmin && type === 'CUSTOMER') {
+        filter.assignedToId = req.user.userId;
+      }
+
       const partners = await prisma.partner.findMany({
-        where: {
-          type: type,
-          debtBalance: { gt: 0 }
-        },
-        orderBy: { debtBalance: 'desc' }
+        where: filter,
+        orderBy: { debtBalance: 'desc' },
+        include: { assignedTo: { select: { fullName: true } } }
       });
       res.json(partners);
     } catch (error) {

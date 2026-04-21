@@ -114,6 +114,20 @@ const orderController = {
         return res.status(400).json({ message: 'Khách hàng và Giỏ hàng không được để trống' });
       }
 
+      // Kiểm tra quyền sở hữu khách hàng
+      const customer = await prisma.partner.findUnique({ where: { id: Number(customerId) } });
+      if (!customer) {
+        return res.status(404).json({ message: 'Khách hàng không tồn tại' });
+      }
+
+      if (customer.type === 'CUSTOMER' && customer.assignedToId !== userId) {
+        const role = await prisma.role.findUnique({ where: { id: req.user.roleId } });
+        const permissions = typeof role.permissions === 'string' ? JSON.parse(role.permissions || '[]') : (role.permissions || []);
+        if (!permissions.includes('ALL_ACCESS')) {
+          return res.status(403).json({ message: 'Bạn không có quyền lên đơn cho khách hàng này. Khách hàng này thuộc về nhân viên khác.' });
+        }
+      }
+
       // Xác thực danh mục hàng tồn trước khi chốt đơn
       const variantIds = items.map(item => item.variantId);
       const variantsInDb = await prisma.productVariant.findMany({

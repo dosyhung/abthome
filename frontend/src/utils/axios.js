@@ -33,8 +33,8 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem('user');
       
       // Đá về màn hình Login bằng Object window toàn cục
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      if (window.location.hash !== '#/login') {
+        window.location.href = '#/login';
       }
     }
     return Promise.reject(error);

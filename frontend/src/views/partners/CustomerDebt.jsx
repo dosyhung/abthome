@@ -25,6 +25,8 @@ import {
   CBadge
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
+import { useAuth } from '../../contexts/AuthContext'
+import axiosClient from '../../api/axiosClient'
 import { cilMoney, cilUser } from '@coreui/icons'
 
 const formatCurrency = (value) => {
@@ -32,8 +34,19 @@ const formatCurrency = (value) => {
 }
 
 const CustomerDebt = () => {
+  const { user } = useAuth()
   const [customers, setCustomers] = useState([])
+  const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+
+  let canManageUsers = false
+  if (user?.role?.permissions) {
+    const perms = typeof user.role.permissions === 'string'
+      ? JSON.parse(user.role.permissions)
+      : user.role.permissions
+    canManageUsers = Array.isArray(perms) &&
+      (perms.includes('ALL_ACCESS'))
+  }
 
   // -- Modal State --
   const [visible, setVisible] = useState(false)
@@ -50,16 +63,25 @@ const CustomerDebt = () => {
 
   useEffect(() => {
     fetchCustomers()
-  }, [])
+    if (canManageUsers) {
+      fetchUsers()
+    }
+  }, [canManageUsers])
+
+  const fetchUsers = async () => {
+    try {
+      const res = await axiosClient.get('/users')
+      setUsers(Array.isArray(res) ? res : res?.data || [])
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   const fetchCustomers = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/payments/partners/debt?type=CUSTOMER')
-      if (res.ok) {
-        const data = await res.json()
-        setCustomers(data)
-      }
+      const res = await axiosClient.get('/payments/partners/debt?type=CUSTOMER')
+      setCustomers(Array.isArray(res) ? res : res?.data || [])
     } catch (e) {
       console.error(e)
     } finally {
@@ -76,11 +98,8 @@ const CustomerDebt = () => {
     
     // Fetch Unpaid Orders for this customer
     try {
-      const res = await fetch(`/api/payments/partners/${customer.id}/unpaid-orders`)
-      if (res.ok) {
-        const orders = await res.json()
-        setUnpaidOrders(orders)
-      }
+      const res = await axiosClient.get(`/payments/partners/${customer.id}/unpaid-orders`)
+      setUnpaidOrders(Array.isArray(res) ? res : res?.data || [])
     } catch (e) {
       console.error(e)
     }
@@ -114,25 +133,22 @@ const CustomerDebt = () => {
     }
 
     try {
-      const res = await fetch('/api/payments/receive', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(bodyArgs)
-      })
-
-      if (res.ok) {
-        alert(`Thu thành công ${formatCurrency(amountToCollect)}!`)
-        setVisible(false)
-        fetchCustomers() // Refresh
-      } else {
-        const errorData = await res.json()
-        alert(`Lỗi: ${errorData.message || 'Không thể thu tiền'}`)
-      }
+      await axiosClient.post('/payments/receive', bodyArgs)
+      alert(`Thu thành công ${formatCurrency(amountToCollect)}!`)
+      setVisible(false)
+      fetchCustomers() // Refresh
     } catch (error) {
       console.error(error)
-      alert("Đã xảy ra lỗi mạng!")
+      alert(`Lỗi: ${error.response?.data?.message || 'Không thể thu tiền'}`)
+    }
+  }
+
+  const handleAssignChange = async (customerId, newUserId) => {
+    try {
+       await axiosClient.put(`/partners/${customerId}`, { assignedToId: newUserId || null })
+       fetchCustomers()
+    } catch (err) {
+       alert("Lỗi khi chuyển phụ trách khách hàng")
     }
   }
 
@@ -156,6 +172,7 @@ const CustomerDebt = () => {
                   <CTableHeaderCell>Khách hàng</CTableHeaderCell>
                   <CTableHeaderCell>Điện thoại</CTableHeaderCell>
                   <CTableHeaderCell className="text-end">Dư Nợ Tổng</CTableHeaderCell>
+                  {canManageUsers && <CTableHeaderCell className="text-center">Người phụ trách</CTableHeaderCell>}
                   <CTableHeaderCell className="text-center" style={{ width: '150px' }}>Hành động</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
@@ -169,6 +186,16 @@ const CustomerDebt = () => {
                     <CTableDataCell className="text-end fw-bold text-danger fs-6">
                       {formatCurrency(c.debtBalance)}
                     </CTableDataCell>
+                    {canManageUsers && (
+                      <CTableDataCell className="text-center">
+                         <CFormSelect size="sm" value={c.assignedToId || ''} onChange={(e) => handleAssignChange(c.id, e.target.value)}>
+                            <option value="">-- Trống --</option>
+                            {users.map(u => (
+                               <option key={u.id} value={u.id}>{u.fullName}</option>
+                            ))}
+                         </CFormSelect>
+                      </CTableDataCell>
+                    )}
                     <CTableDataCell className="text-center">
                       <CButton 
                         color="success" 

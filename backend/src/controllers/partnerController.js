@@ -6,10 +6,19 @@ const partnerController = {
     try {
       const { type } = req.query;
       const filter = type ? { type } : {};
+
+      const role = await prisma.role.findUnique({ where: { id: req.user.roleId } });
+      const permissions = typeof role.permissions === 'string' ? JSON.parse(role.permissions || '[]') : (role.permissions || []);
+      const isAdmin = permissions.includes('ALL_ACCESS');
+
+      if (!isAdmin && type === 'CUSTOMER') {
+        filter.assignedToId = req.user.userId;
+      }
       
       const partners = await prisma.partner.findMany({
         where: filter,
-        orderBy: { name: 'asc' }
+        orderBy: { name: 'asc' },
+        include: { assignedTo: { select: { fullName: true } } }
       });
       
       // Thêm nợ cũ vào nếu cần thiết, nhưng getPartners này đang được xài chung
@@ -39,7 +48,8 @@ const partnerController = {
           address: address || null,
           taxCode: taxCode || null,
           type: type || 'SUPPLIER',
-          debtBalance: 0
+          debtBalance: 0,
+          assignedToId: type === 'CUSTOMER' ? req.user.userId : null
         }
       });
       res.status(201).json({ message: 'Tạo nhà cung cấp thành công', data: partner });
@@ -52,7 +62,7 @@ const partnerController = {
   updatePartner: async (req, res) => {
     try {
       const { id } = req.params;
-      const { name, phone, address, taxCode } = req.body;
+      const { name, phone, address, taxCode, assignedToId } = req.body;
 
       // Check phone trùng nếu phone bị thay đổi
       const existing = await prisma.partner.findUnique({ where: { id: parseInt(id) } });
@@ -60,16 +70,30 @@ const partnerController = {
         return res.status(404).json({ message: 'Không tìm thấy đối tác' });
       }
 
-      if (phone !== existing.phone) {
+      if (phone !== undefined && phone !== existing.phone) {
         const phoneTaken = await prisma.partner.findUnique({ where: { phone } });
         if (phoneTaken) {
-          return res.status(400).json({ message: 'Số điện thoại này đã thuộc người khác' });
+          return res.status(400).json({ message: 'Số điện thoại này đã thuộc đối tác khác' });
         }
+      }
+
+      const dataToUpdate = {};
+      if (name !== undefined) dataToUpdate.name = name;
+      if (phone !== undefined) dataToUpdate.phone = phone;
+      if (address !== undefined) dataToUpdate.address = address;
+      if (taxCode !== undefined) dataToUpdate.taxCode = taxCode;
+
+      const role = await prisma.role.findUnique({ where: { id: req.user.roleId } });
+      const permissions = typeof role.permissions === 'string' ? JSON.parse(role.permissions || '[]') : (role.permissions || []);
+      const isAdmin = permissions.includes('ALL_ACCESS');
+
+      if (assignedToId !== undefined && isAdmin) {
+        dataToUpdate.assignedToId = assignedToId ? parseInt(assignedToId) : null;
       }
 
       const updated = await prisma.partner.update({
         where: { id: parseInt(id) },
-        data: { name, phone, address, taxCode }
+        data: dataToUpdate
       });
 
       res.status(200).json({ message: 'Cập nhật thành công', data: updated });
