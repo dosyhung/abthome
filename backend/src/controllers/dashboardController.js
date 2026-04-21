@@ -429,6 +429,110 @@ const dashboardController = {
       console.error("Lỗi getWeeklySales:", e);
       res.status(500).json({ message: 'Lỗi lấy dữ liệu bán hàng 7 ngày' });
     }
+  },
+
+  getLeaderboard: async (req, res) => {
+    try {
+      const now = new Date();
+      // Lấy từ đầu tháng đến hiện tại
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+      const orders = await prisma.order.findMany({
+        where: {
+          createdAt: {
+            gte: startOfMonth,
+            lte: endOfMonth
+          },
+          status: { not: 'CANCELLED' }
+        },
+        include: {
+          user: true
+        }
+      });
+
+      const userStats = {};
+
+      orders.forEach(order => {
+        const userId = order.userId;
+        if (!userId) return;
+
+        if (!userStats[userId]) {
+          userStats[userId] = {
+            id: userId,
+            name: order.user ? order.user.fullName : 'N/A',
+            avatar: order.user ? order.user.avatar : null,
+            totalRevenue: 0,
+            orderCount: 0
+          };
+        }
+
+        userStats[userId].totalRevenue += Number(order.finalAmount || 0);
+        userStats[userId].orderCount += 1;
+      });
+
+      const leaderboard = Object.values(userStats).map(user => {
+        let classification = { label: 'Cố gắng', color: 'danger' };
+        if (user.totalRevenue >= 400000000) {
+          classification = { label: 'Xuất Sắc', color: 'success' };
+        } else if (user.totalRevenue >= 300000000) {
+          classification = { label: 'Giỏi', color: 'primary' };
+        } else if (user.totalRevenue >= 200000000) {
+          classification = { label: 'Đạt', color: 'warning' };
+        }
+
+        return {
+          ...user,
+          classification
+        };
+      });
+
+      leaderboard.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+      // Mặc định trả về top 10 hoặc tất cả
+      res.status(200).json(leaderboard);
+    } catch (error) {
+      console.error("Lỗi getLeaderboard:", error);
+      res.status(500).json({ message: 'Lỗi lấy dữ liệu bảng xếp hạng' });
+    }
+  },
+
+  getLowStockProducts: async (req, res) => {
+    try {
+      const takeLimit = req.query.limit ? parseInt(req.query.limit, 10) : undefined;
+      
+      const queryOptions = {
+        where: {
+          stockCount: {
+            lt: 50
+          }
+        },
+        include: {
+          product: true
+        },
+        orderBy: {
+          stockCount: 'asc'
+        }
+      };
+
+      if (takeLimit && !isNaN(takeLimit)) {
+        queryOptions.take = takeLimit;
+      }
+
+      const lowStockVariants = await prisma.productVariant.findMany(queryOptions);
+
+      const result = lowStockVariants.map(v => ({
+        id: v.id,
+        sku: v.sku,
+        productName: v.product ? v.product.name : 'Unknown Product',
+        stockCount: v.stockCount
+      }));
+
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Lỗi getLowStockProducts:", error);
+      res.status(500).json({ message: 'Lỗi lấy dữ liệu cảnh báo tồn kho' });
+    }
   }
 };
 

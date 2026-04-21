@@ -80,6 +80,10 @@ const ProductEdit = React.lazy(() => import('./views/products/ProductEdit'))
 const CategoryList = React.lazy(() => import('./views/products/CategoryList'))
 const ImportInventoryForm = React.lazy(() => import('./views/inventory/ImportInventoryForm'))
 const InventoryList = React.lazy(() => import('./views/inventory/InventoryList'))
+const LowStockWarning = React.lazy(() => import('./views/inventory/LowStockWarning'))
+const StocktakeList = React.lazy(() => import('./views/inventory/StocktakeList'))
+const StocktakeCreate = React.lazy(() => import('./views/inventory/StocktakeCreate'))
+const StocktakeDetail = React.lazy(() => import('./views/inventory/StocktakeDetail'))
 
 // Orders
 const OrderList = React.lazy(() => import('./views/orders/OrderList'))
@@ -171,6 +175,10 @@ export const routes = [
   { path: '/inventory', name: 'Giao dịch Kho', exact: true },
   { path: '/inventory/list', name: 'Danh sách Phiếu', element: InventoryList },
   { path: '/inventory/import', name: 'Nhập kho', element: ImportInventoryForm },
+  { path: '/inventory/low-stock', name: 'Cảnh báo tồn kho', element: LowStockWarning },
+  { path: '/inventory/stocktakes', name: 'Phiếu Kiểm Kê', element: StocktakeList, exact: true },
+  { path: '/inventory/stocktakes/create', name: 'Tạo Phiếu Kiểm Kê', element: StocktakeCreate },
+  { path: '/inventory/stocktakes/:id', name: 'Chi tiết Kiểm Kê', element: StocktakeDetail },
   { path: '/orders', name: 'Bán hàng', exact: true },
   { path: '/orders/list', name: 'Quản lý Đơn hàng', element: OrderList },
   { path: '/orders/create', name: 'Tạo đơn mới (POS)', element: CreateOrder },

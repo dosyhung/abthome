@@ -38,6 +38,7 @@ import sothu from './assets/flaticon/sothu.png'
 import setting from './assets/flaticon/settings.png'
 import printer from './assets/flaticon/printer.png'
 import picture from './assets/flaticon/picture.png'
+import warning from './assets/flaticon/warning.png'
 
 // Wrappers giúp chuẩn hóa kích thước của ảnh khi chèn vào Navigation
 const makeIcon = (src) => (
@@ -67,13 +68,13 @@ const _nav = [
       {
         component: CNavItem,
         name: 'Danh Sách Đơn Hàng',
-        icon: makeIcon(shoppinglist),
+        icon: makeSmallIcon(shoppinglist),
         to: '/orders/list',
       },
       {
         component: CNavItem,
         name: 'Tạo Hoá Đơn Bán',
-        icon: makeIcon(ecommerce),
+        icon: makeSmallIcon(ecommerce),
         to: '/orders/create',
       },
     ],
@@ -118,7 +119,7 @@ const _nav = [
         component: CNavItem,
         name: 'Danh sách Phiếu Nhập',
         to: '/inventory/list',
-        icon: makeIcon(imgTask)
+        icon: makeSmallIcon(imgTask)
       },
       {
         component: CNavItem,
@@ -126,6 +127,18 @@ const _nav = [
         to: '/inventory/import',
         // Dùng icon Đóng gói hàng cho Phiếu Nhập
         icon: makeSmallIcon(imgPackaging),
+      },
+      {
+        component: CNavItem,
+        name: 'Cảnh báo tồn kho',
+        to: '/inventory/low-stock',
+        icon: makeSmallIcon(warning),
+      },
+      {
+        component: CNavItem,
+        name: 'Phiếu Kiểm Kê',
+        to: '/inventory/stocktakes',
+        icon: makeSmallIcon(shoppinglist),
       },
     ],
   },
@@ -177,7 +190,7 @@ const _nav = [
         component: CNavItem,
         name: 'Sổ Quỹ Thu / Chi',
         to: '/cashbook',
-        icon: makeIcon(sothu),
+        icon: makeSmallIcon(sothu),
       },
     ],
   },
@@ -204,13 +217,13 @@ const _nav = [
         component: CNavItem,
         name: 'Cấu Hình In Ấn',
         to: '/settings/print',
-        icon: makeIcon(printer),
+        icon: makeSmallIcon(printer),
       },
       {
         component: CNavItem,
         name: 'Cài Đặt Logo App',
         to: '/settings/logo',
-        icon: makeIcon(picture),
+        icon: makeSmallIcon(picture),
       },
     ]
   },

@@ -12,6 +12,7 @@ const profileRoutes = require('./routes/profileRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const stocktakeRoutes = require('./routes/stocktakeRoutes');
 const path = require('path');
 
 const app = express();
@@ -38,6 +39,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/stocktakes', stocktakeRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

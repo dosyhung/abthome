@@ -51,6 +51,8 @@ const Dashboard = () => {
   const [topProducts, setTopProducts] = useState([])
   const [periodTotalOrders, setPeriodTotalOrders] = useState(0)
   const [periodConversionRate, setPeriodConversionRate] = useState(0)
+  const [leaderboardData, setLeaderboardData] = useState([])
+  const [lowStockData, setLowStockData] = useState([])
 
   useEffect(() => {
     const fetchWeeklySales = async () => {
@@ -73,16 +75,28 @@ const Dashboard = () => {
       }
     }
     fetchWeeklySales()
+
+    const fetchLeaderboard = async () => {
+      try {
+        const payload = await axiosClient.get('/dashboard/leaderboard')
+        setLeaderboardData(payload || [])
+      } catch (e) {
+        console.error("Failed to load leaderboard", e)
+      }
+    }
+    fetchLeaderboard()
+
+    const fetchLowStock = async () => {
+      try {
+        const payload = await axiosClient.get('/dashboard/low-stock?limit=5')
+        setLowStockData(payload || [])
+      } catch (e) {
+        console.error("Failed to load low stock data", e)
+      }
+    }
+    fetchLowStock()
   }, [])
 
-  const rawSalesData = [
-    { id: 1, avatar: avatar1, name: 'Trần Văn An', orderCount: 185, totalRevenue: 650000000 },
-    { id: 2, avatar: avatar2, name: 'Lê Diệu Linh', orderCount: 125, totalRevenue: 450000000 },
-    { id: 3, avatar: avatar3, name: 'Phạm Tuấn Hải', orderCount: 98, totalRevenue: 210000000 },
-    { id: 4, avatar: avatar4, name: 'Nguyễn Hữu Tài', orderCount: 35, totalRevenue: 80000000 },
-    { id: 5, avatar: avatar5, name: 'Đào Duy Anh', orderCount: 143, totalRevenue: 520000000 },
-  ]
-  const salesData = [...rawSalesData].sort((a, b) => b.totalRevenue - a.totalRevenue)
 
   return (
     <>
@@ -234,12 +248,52 @@ const Dashboard = () => {
                   )) : (
                     <div className="text-center text-muted small mt-4 pb-4">Đang tải dữ liệu sản phẩm...</div>
                   )}
+
+                  <hr className="mt-4 mb-4" />
+                  
+                  <div className="fs-6 fw-bold mb-3 text-danger d-flex align-items-center">
+                    ⚠️ <span className="ms-2">Cảnh Báo: Sản Phẩm Sắp Hết Hàng</span>
+                  </div>
+                  
+                  <div className="table-responsive">
+                    <CTable align="middle" className="mb-0 border text-nowrap" hover small bordered>
+                      <CTableHead>
+                        <CTableRow>
+                          <CTableHeaderCell className="bg-body-tertiary">Sản phẩm</CTableHeaderCell>
+                          <CTableHeaderCell className="bg-body-tertiary text-center" style={{ width: '80px' }}>Tồn kho</CTableHeaderCell>
+                        </CTableRow>
+                      </CTableHead>
+                      <CTableBody>
+                        {lowStockData && lowStockData.length > 0 ? lowStockData.map((item) => (
+                          <CTableRow key={item.id}>
+                            <CTableDataCell>
+                              <div className="fw-semibold text-truncate text-wrap" style={{ maxWidth: '300px', whiteSpace: 'normal' }}>
+                                {item.productName}
+                              </div>
+                              <div className="small text-body-secondary fw-bold mt-1">Mã: {item.sku}</div>
+                            </CTableDataCell>
+                            <CTableDataCell className="text-center">
+                              <CBadge color="danger" className="p-2 fs-6 rounded-pill">
+                                {item.stockCount}
+                              </CBadge>
+                            </CTableDataCell>
+                          </CTableRow>
+                        )) : (
+                          <CTableRow>
+                            <CTableDataCell colSpan="2" className="text-center text-muted py-3">
+                              <span className="text-success fw-bold mx-1">✔️</span> Không có mặt hàng nào thiếu.
+                            </CTableDataCell>
+                          </CTableRow>
+                        )}
+                      </CTableBody>
+                    </CTable>
+                  </div>
                 </CCol>
               </CRow>
 
               <br />
 
-              <div className="fs-5 fw-semibold mb-4 text-center">Bảng Vinh Danh Nhân Viên Bán Hàng</div>
+              <div className="fs-5 fw-semibold mb-4 text-center">Bảng Vinh Danh Nhân Viên Bán Hàng (Tháng này)</div>
               <CTable align="middle" className="mb-0 border text-nowrap" hover responsive>
                 <CTableHead>
                   <CTableRow>
@@ -251,21 +305,23 @@ const Dashboard = () => {
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                  {salesData.map((item, index) => {
+                  {leaderboardData && leaderboardData.length > 0 ? leaderboardData.map((item, index) => {
                     const rank = index + 1;
                     let rankDisplay = rank;
                     if (rank === 1) rankDisplay = '🥇 1';
                     if (rank === 2) rankDisplay = '🥈 2';
                     if (rank === 3) rankDisplay = '🥉 3';
 
-                    let badgeColor = 'warning';
-                    let badgeLabel = 'Cố gắng';
-                    if (item.totalRevenue >= 400000000) {
-                      badgeColor = 'success';
-                      badgeLabel = 'Xuất Sắc';
-                    } else if (item.totalRevenue >= 200000000) {
-                      badgeColor = 'primary';
-                      badgeLabel = 'Đạt';
+                    const badgeColor = item.classification?.color || 'secondary';
+                    const badgeLabel = item.classification?.label || 'Chưa xếp loại';
+                    
+                    let avatarUrl = avatar1;
+                    if (item.avatar) {
+                      if (item.avatar.startsWith('/public/')) {
+                        avatarUrl = `http://localhost:5000${item.avatar}`;
+                      } else {
+                        avatarUrl = item.avatar;
+                      }
                     }
 
                     return (
@@ -277,7 +333,7 @@ const Dashboard = () => {
                         </CTableDataCell>
                         <CTableDataCell>
                           <div className="d-flex align-items-center">
-                            <CAvatar size="md" src={item.avatar} className="me-3" />
+                            <CAvatar size="md" src={avatarUrl} className="me-3" />
                             <div className="fw-semibold">{item.name}</div>
                           </div>
                         </CTableDataCell>
@@ -296,7 +352,11 @@ const Dashboard = () => {
                         </CTableDataCell>
                       </CTableRow>
                     )
-                  })}
+                  }) : (
+                    <CTableRow>
+                      <CTableDataCell colSpan="5" className="text-center text-muted py-4">Chưa có dữ liệu bán hàng tháng này.</CTableDataCell>
+                    </CTableRow>
+                  )}
                 </CTableBody>
               </CTable>
             </CCardBody>
