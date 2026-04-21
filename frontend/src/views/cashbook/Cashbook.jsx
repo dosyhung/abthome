@@ -15,6 +15,7 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilLibrary } from '@coreui/icons'
+import axiosClient from '../../api/axiosClient'
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0)
@@ -38,11 +39,8 @@ const Cashbook = () => {
   const fetchCashbook = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/payments/cashbook')
-      if (res.ok) {
-        const data = await res.json()
-        setPayments(data)
-      }
+      const res = await axiosClient.get('/payments/cashbook')
+      setPayments(Array.isArray(res) ? res : res?.data || [])
     } catch (e) {
       console.error(e)
     } finally {
