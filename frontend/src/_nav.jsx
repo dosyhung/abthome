@@ -1,16 +1,6 @@
-/**
- * Sidebar Navigation Configuration
- *
- * Defines the structure and content of the sidebar navigation menu.
- * Supports multiple navigation component types from CoreUI React:
- * - CNavItem: Single navigation link
- * - CNavGroup: Collapsible group of links
- * - CNavTitle: Section title/divider
- *
- * @module _nav
- */
-
 import React from 'react'
+
+// Icon Phosphor cũ dành cho các Sub-menu và mục Cài Đặt
 import {
   Gauge,
   Receipt,
@@ -25,19 +15,45 @@ import {
   Money,
   Bank,
   Gear,
-  Image
+  Image as ImageIcon
 } from '@phosphor-icons/react'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
-/**
- * Navigation menu structure array
- */
+// Các file ảnh PNG local từ thư mục flaticon
+import imgCategory from './assets/flaticon/category.png'
+import imgTask from './assets/flaticon/completed-task.png'
+import imgCoop from './assets/flaticon/cooperation.png'
+import imgDebt from './assets/flaticon/debt.png'
+import imgDebt2 from './assets/flaticon/debt2.png'
+import imgFunding from './assets/flaticon/funding.png'
+import imgGroup from './assets/flaticon/group.png'
+import imgPackaging from './assets/flaticon/packaging.png'
+import imgProducts from './assets/flaticon/products.png'
+import imgRevenue from './assets/flaticon/revenue.png'
+import imgWarehouse from './assets/flaticon/warehouse.png'
+import shoppinglist from './assets/flaticon/shopping-list.png'
+import ecommerce from './assets/flaticon/ecommerce.png'
+import bestproduct from './assets/flaticon/best-product.png'
+import sothu from './assets/flaticon/sothu.png'
+import setting from './assets/flaticon/settings.png'
+import printer from './assets/flaticon/printer.png'
+import picture from './assets/flaticon/picture.png'
+
+// Wrappers giúp chuẩn hóa kích thước của ảnh khi chèn vào Navigation
+const makeIcon = (src) => (
+  <img src={src} className="nav-icon" style={{ width: '26px', height: '26px', objectFit: 'contain', filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.1))', marginRight: '16px' }} alt="icon" />
+)
+const makeSmallIcon = (src) => (
+  <img src={src} className="nav-icon" style={{ width: '20px', height: '20px', objectFit: 'contain', opacity: 0.9, marginRight: '16px' }} alt="icon" />
+)
+
 const _nav = [
   {
     component: CNavItem,
     name: 'Trang Chủ',
     to: '/dashboard',
-    icon: <Gauge size={24} weight="duotone" className="nav-icon text-info" />,
+    // Dùng hình ảnh Doanh Thu làm biểu tượng Dashboard
+    icon: makeIcon(imgRevenue),
   },
   {
     component: CNavTitle,
@@ -46,18 +62,18 @@ const _nav = [
   {
     component: CNavGroup,
     name: 'Quản Lý Bán Hàng',
-    icon: <Receipt size={24} weight="duotone" className="nav-icon text-warning" />,
+    icon: makeIcon(imgTask),
     items: [
       {
         component: CNavItem,
         name: 'Danh Sách Đơn Hàng',
-        icon: <ListDashes size={20} weight="duotone" className="nav-icon text-warning" style={{ opacity: 0.8 }} />,
+        icon: makeIcon(shoppinglist),
         to: '/orders/list',
       },
       {
         component: CNavItem,
         name: 'Tạo Hoá Đơn Bán',
-        icon: <PlusCircle size={20} weight="duotone" className="nav-icon text-warning" style={{ opacity: 0.8 }} />,
+        icon: makeIcon(ecommerce),
         to: '/orders/create',
       },
     ],
@@ -69,13 +85,13 @@ const _nav = [
   {
     component: CNavGroup,
     name: 'Quản Lý Sản Phẩm',
-    icon: <Package size={24} weight="duotone" className="nav-icon text-primary" />,
+    icon: makeIcon(imgProducts),
     items: [
       {
         component: CNavItem,
         name: 'Quản Lý Sản Phẩm',
         to: '/products/list',
-        icon: <Stack size={20} weight="duotone" className="nav-icon text-primary" style={{ opacity: 0.8 }} />,
+        icon: makeIcon(bestproduct),
       },
     ],
   },
@@ -87,7 +103,7 @@ const _nav = [
     component: CNavItem,
     name: 'Danh Mục Sản Phẩm',
     to: '/products/categories',
-    icon: <Tag size={20} weight="duotone" className="nav-icon text-primary" style={{ opacity: 0.8 }} />,
+    icon: makeIcon(imgCategory),
   },
   {
     component: CNavTitle,
@@ -96,19 +112,20 @@ const _nav = [
   {
     component: CNavGroup,
     name: 'Quản Lý Kho',
-    icon: <Package size={24} weight="duotone" className="nav-icon text-primary" />,
+    icon: makeIcon(imgWarehouse),
     items: [
       {
         component: CNavItem,
         name: 'Danh sách Phiếu Nhập',
         to: '/inventory/list',
-        icon: <ClockCounterClockwise size={20} weight="duotone" className="nav-icon text-primary" style={{ opacity: 0.8 }} />,
+        icon: makeIcon(imgTask)
       },
       {
         component: CNavItem,
         name: 'Tạo Phiếu Nhập',
         to: '/inventory/import',
-        icon: <PlusCircle size={20} weight="duotone" className="nav-icon text-primary" style={{ opacity: 0.8 }} />,
+        // Dùng icon Đóng gói hàng cho Phiếu Nhập
+        icon: makeSmallIcon(imgPackaging),
       },
     ],
   },
@@ -119,31 +136,31 @@ const _nav = [
   {
     component: CNavGroup,
     name: 'Khách hàng & Đối tác',
-    icon: <Users size={24} weight="duotone" className="nav-icon text-success" />,
+    icon: makeIcon(imgCoop),
     items: [
       {
         component: CNavItem,
         name: 'Quản lý Khách Hàng',
         to: '/partners/customers',
-        icon: <Users size={20} weight="duotone" className="nav-icon text-success" style={{ opacity: 0.8 }} />,
+        icon: makeSmallIcon(imgGroup),
       },
       {
         component: CNavItem,
         name: 'Danh sách Nhà Cung Cấp',
         to: '/partners/suppliers',
-        icon: <Buildings size={20} weight="duotone" className="nav-icon text-success" style={{ opacity: 0.8 }} />,
+        icon: makeSmallIcon(imgCoop),
       },
       {
         component: CNavItem,
         name: 'Thu nợ Khách Hàng',
         to: '/partners/debt',
-        icon: <Money size={20} weight="duotone" className="nav-icon text-success" style={{ opacity: 0.8 }} />,
+        icon: makeSmallIcon(imgDebt),
       },
       {
         component: CNavItem,
         name: 'Chi nợ Nhà Cung Cấp',
         to: '/partners/supplier-debt',
-        icon: <Bank size={20} weight="duotone" className="nav-icon text-success" style={{ opacity: 0.8 }} />,
+        icon: makeSmallIcon(imgDebt2),
       },
     ],
   },
@@ -154,13 +171,13 @@ const _nav = [
   {
     component: CNavGroup,
     name: 'Sổ Quỹ Kế Toán',
-    icon: <Bank size={24} weight="duotone" className="nav-icon text-danger" />,
+    icon: makeIcon(imgFunding),
     items: [
       {
         component: CNavItem,
         name: 'Sổ Quỹ Thu / Chi',
         to: '/cashbook',
-        icon: <ClockCounterClockwise size={20} weight="duotone" className="nav-icon text-danger" style={{ opacity: 0.8 }} />,
+        icon: makeIcon(sothu),
       },
     ],
   },
@@ -172,7 +189,7 @@ const _nav = [
     component: CNavItem,
     name: 'Quản lý Nhân Viên',
     to: '/users',
-    icon: <Users size={24} weight="duotone" className="nav-icon text-info" />,
+    icon: makeIcon(imgGroup),
   },
   {
     component: CNavTitle,
@@ -181,19 +198,19 @@ const _nav = [
   {
     component: CNavGroup,
     name: 'Cấu Hình Hệ Thống',
-    icon: <Gear size={24} weight="duotone" className="nav-icon text-secondary" />,
+    icon: makeIcon(setting),
     items: [
       {
         component: CNavItem,
         name: 'Cấu Hình In Ấn',
         to: '/settings/print',
-        icon: <Gear size={20} weight="duotone" className="nav-icon text-secondary" style={{ opacity: 0.8 }} />,
+        icon: makeIcon(printer),
       },
       {
         component: CNavItem,
         name: 'Cài Đặt Logo App',
         to: '/settings/logo',
-        icon: <Image size={20} weight="duotone" className="nav-icon text-secondary" style={{ opacity: 0.8 }} />,
+        icon: makeIcon(picture),
       },
     ]
   },
