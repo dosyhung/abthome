@@ -142,6 +142,39 @@ const UserList = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Bắt lỗi định dạng email bằng Regex
+    if (formData.email && formData.email !== 'admin@admin.com') {
+      const emailRegex = /^[^\s@]+@gmail\.com$/;
+      if (!emailRegex.test(formData.email)) {
+        pushToast('Định dạng không hợp lệ! Email bắt buộc phải có đuôi @gmail.com.', 'danger')
+        return
+      }
+    }
+
+    if (formData.phone) {
+      const phoneRegex = /^0(3|5|7|8|9)[0-9]{8}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        pushToast('Số điện thoại không hợp lệ! Bắt buộc 10 số và bắt đầu bằng 03, 05, 07, 08, hoặc 09.', 'danger')
+        return
+      }
+    }
+
+    // So sánh trùng lặp với database (danh sách users đã tải)
+    const isEmailDuplicate = users.some(u => u.email === formData.email && u.id !== selectedUserId);
+    if (isEmailDuplicate) {
+      pushToast('Email này đã tồn tại trong hệ thống!', 'danger');
+      return;
+    }
+
+    if (formData.phone) {
+      const isPhoneDuplicate = users.some(u => u.phone === formData.phone && u.id !== selectedUserId);
+      if (isPhoneDuplicate) {
+        pushToast('Số điện thoại này đã được sử dụng bởi người khác!', 'danger');
+        return;
+      }
+    }
+
     setIsSubmitting(true)
     try {
       if (formMode === 'ADD') {
@@ -149,8 +182,8 @@ const UserList = () => {
         pushToast('Tạo nhân viên thành công!')
       } else {
         // Chỉ gửi những trường cho phép sửa
-        const { fullName, phone, roleId } = formData
-        await axiosInstance.put(`/users/${selectedUserId}`, { fullName, phone, roleId })
+        const { fullName, phone, roleId, email } = formData
+        await axiosInstance.put(`/users/${selectedUserId}`, { fullName, phone, roleId, email })
         pushToast('Cập nhật nhân viên thành công!')
       }
       setVisible(false)
@@ -259,17 +292,19 @@ const UserList = () => {
         </CModalHeader>
         <CForm onSubmit={handleSubmit}>
           <CModalBody>
+            <div className="mb-3">
+              <label className="mb-1 fw-bold">Email (Dùng để đăng nhập)</label>
+              <CFormInput
+                type="email"
+                required
+                value={formData.email}
+                disabled={formData.email === 'admin@admin.com'}
+                onChange={e => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+
             {formMode === 'ADD' && (
               <>
-                <div className="mb-3">
-                  <label className="mb-1 fw-bold">Email (Dùng để đăng nhập)</label>
-                  <CFormInput
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
                 <div className="mb-3">
                   <label className="mb-1 fw-bold">Mật khẩu khởi tạo</label>
                   <CFormInput

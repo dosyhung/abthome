@@ -51,6 +51,13 @@ const userController = {
         return res.status(400).json({ message: 'Email này đã được sử dụng' });
       }
 
+      if (phone) {
+        const existingPhone = await prisma.user.findFirst({ where: { phone } });
+        if (existingPhone) {
+          return res.status(400).json({ message: 'Số điện thoại này đã được sử dụng' });
+        }
+      }
+
       // Mã hóa mật khẩu
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
@@ -78,17 +85,32 @@ const userController = {
   updateUser: async (req, res) => {
     try {
       const { id } = req.params;
-      const { fullName, phone, roleId, isActive } = req.body;
+      const { fullName, phone, email, roleId, isActive } = req.body;
 
       const userExists = await prisma.user.findUnique({ where: { id: Number(id) } });
       if (!userExists) {
         return res.status(404).json({ message: 'Không tìm thấy người dùng' });
       }
 
+      if (phone && phone !== userExists.phone) {
+        const existingPhone = await prisma.user.findFirst({ where: { phone } });
+        if (existingPhone) {
+          return res.status(400).json({ message: 'Số điện thoại này đã tồn tại trong hệ thống' });
+        }
+      }
+
+      if (email && email !== userExists.email) {
+        const existingEmail = await prisma.user.findFirst({ where: { email } });
+        if (existingEmail) {
+          return res.status(400).json({ message: 'Email này đã tồn tại trong hệ thống' });
+        }
+      }
+
       const updatedUser = await prisma.user.update({
         where: { id: Number(id) },
         data: {
           fullName: fullName !== undefined ? fullName : userExists.fullName,
+          email: email !== undefined ? email : userExists.email,
           phone: phone !== undefined ? phone : userExists.phone,
           roleId: roleId !== undefined ? Number(roleId) : userExists.roleId,
           isActive: isActive !== undefined ? isActive : userExists.isActive

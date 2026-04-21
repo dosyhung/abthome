@@ -6,7 +6,21 @@ const profileController = {
   updateMyProfile: async (req, res) => {
     try {
       const { userId } = req.user; // Trích xuất từ token qua verifyToken middleware
-      const { fullName, phone, avatar } = req.body;
+      const { fullName, phone, email, avatar } = req.body;
+
+      if (email) {
+        const existingEmail = await prisma.user.findFirst({ where: { email } });
+        if (existingEmail && existingEmail.id !== userId) {
+          return res.status(400).json({ message: 'Email này đã được sử dụng bởi người dùng khác' });
+        }
+      }
+
+      if (phone) {
+        const existingPhone = await prisma.user.findFirst({ where: { phone } });
+        if (existingPhone && existingPhone.id !== userId) {
+          return res.status(400).json({ message: 'Số điện thoại này đã được sử dụng bởi người dùng khác' });
+        }
+      }
 
       // Không cần thiết phải check role vì user chỉ sửa thông tin của chính mình
       const updatedUser = await prisma.user.update({
@@ -14,6 +28,7 @@ const profileController = {
         data: {
           fullName: fullName !== undefined ? fullName : undefined,
           phone: phone !== undefined ? phone : undefined,
+          email: email !== undefined ? email : undefined,
           avatar: avatar !== undefined ? avatar : undefined,
         }
       });

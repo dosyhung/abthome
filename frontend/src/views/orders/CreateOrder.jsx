@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import axiosClient from '../../api/axiosClient'
@@ -58,6 +58,28 @@ const parseInputCurrency = (val) => {
 const CreateOrder = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
+
+  // --- REFS: Click Outside & ESCAPE ---
+  const searchWrapperRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target)) {
+        setSearchResults([]) // Đóng menu
+      }
+    }
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') {
+        setSearchResults([]) // Đóng menu
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEsc)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEsc)
+    }
+  }, [])
 
   // --- STATE: DATA TỪ BACKEND ---
   const [customers, setCustomers] = useState([])
@@ -341,7 +363,7 @@ const CreateOrder = () => {
             <hr className="mb-4" />
 
             {/* PHẦN CHỌN SẢN PHẨM */}
-            <CRow className="mb-4 position-relative">
+            <CRow className="mb-4 position-relative" ref={searchWrapperRef}>
               <CCol md={12}>
                 <label className="fw-bold mb-2">Sản Phẩm (Nhập tên hoặc Mã SP)</label>
                 <CInputGroup>

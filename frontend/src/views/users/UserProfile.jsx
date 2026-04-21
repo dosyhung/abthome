@@ -99,11 +99,26 @@ const UserProfile = () => {
   }
 
   const handleUpdateProfile = async () => {
+    if (profileData.email) {
+      const emailRegex = /^[^\s@]+@gmail\.com$/;
+      if (!emailRegex.test(profileData.email)) {
+        return addToast(createToast('Lỗi', 'Email không hợp lệ! Vui lòng sử dụng đuôi @gmail.com', 'danger'))
+      }
+    }
+
+    if (profileData.phone) {
+      const phoneRegex = /^0(3|5|7|8|9)[0-9]{8}$/;
+      if (!phoneRegex.test(profileData.phone)) {
+        return addToast(createToast('Lỗi', 'Số điện thoại lỗi! Yêu cầu 10 số bắt đầu bằng 03, 05, 07, 08, 09', 'danger'))
+      }
+    }
+
     setIsUpdatingProfile(true)
     try {
       let payload = {
         fullName: profileData.fullName,
-        phone: profileData.phone
+        phone: profileData.phone,
+        email: profileData.email
       }
 
       // Nếu có đổi ảnh, upload ảnh trước
@@ -255,8 +270,9 @@ const UserProfile = () => {
                       <CCol md={6}>
                         <CFormLabel>Email đăng nhập</CFormLabel>
                         <CFormInput 
+                          name="email"
                           value={profileData.email}
-                          disabled
+                          onChange={handleProfileChange}
                         />
                       </CCol>
                       <CCol md={6}>
