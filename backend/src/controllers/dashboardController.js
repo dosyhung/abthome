@@ -53,15 +53,15 @@ const dashboardController = {
         }
       });
 
-      const currentImports = await prisma.inventoryTransaction.aggregate({
-        _sum: { totalAmount: true },
+      const currentImports = await prisma.inventoryTransaction.findMany({
         where: { createdAt: { gte: startOfCurrent, lte: endOfCurrent }, type: 'IMPORT' }
       });
+      const currentImportsTotal = currentImports.reduce((acc, curr) => acc + Number(curr.totalAmount || 0), 0);
 
-      const currentExpenses = await prisma.payment.aggregate({
-        _sum: { amount: true },
+      const currentExpenses = await prisma.payment.findMany({
         where: { createdAt: { gte: startOfCurrent, lte: endOfCurrent }, type: 'EXPENSE', inventoryTransactionId: null }
       });
+      const currentExpensesTotal = currentExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
 
       let totalRevenueCurrent = 0;
       let totalProfitCurrent = 0;
@@ -85,7 +85,64 @@ const dashboardController = {
       });
 
       const totalOrdersCurrent = currentOrders.length;
-      const totalExpenseCurrent = Number(currentImports._sum.totalAmount || 0) + Number(currentExpenses._sum.amount || 0);
+      const totalExpenseCurrent = currentImportsTotal + currentExpensesTotal;
+
+      let P_BUCKETS = 1;
+      let chartLabels = [];
+      
+      if (timeFilter === 'TODAY') {
+        P_BUCKETS = 24;
+        for (let i = 0; i < 24; i++) chartLabels.push(`${i}h`);
+      } else if (timeFilter === 'WEEK') {
+        P_BUCKETS = 7;
+        chartLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+      } else {
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        P_BUCKETS = lastDay;
+        for (let i = 1; i <= lastDay; i++) chartLabels.push(`${i}`);
+      }
+
+      let chartOrders = Array(P_BUCKETS).fill(0);
+      let chartRevenue = Array(P_BUCKETS).fill(0);
+      let chartProfit = Array(P_BUCKETS).fill(0);
+      let chartExpense = Array(P_BUCKETS).fill(0);
+
+      const getSemanticBucketIndex = (date) => {
+        if (timeFilter === 'TODAY') {
+          return date.getHours();
+        } else if (timeFilter === 'WEEK') {
+          let d = date.getDay(); // 0 = Sun, 1 = Mon
+          return d === 0 ? 6 : d - 1; 
+        } else {
+          return date.getDate() - 1;
+        }
+      };
+
+      currentOrders.forEach(order => {
+        const idx = getSemanticBucketIndex(new Date(order.createdAt));
+        if (idx >= 0 && idx < P_BUCKETS) {
+        const rev = Number(order.finalAmount || 0);
+        let cogs = 0;
+        order.items.forEach(item => {
+          let importPrice = item.batch?.importPrice ? Number(item.batch.importPrice) : (item.variant?.importPrice ? Number(item.variant.importPrice) : 0);
+          cogs += importPrice * item.quantity;
+        });
+
+          chartOrders[idx] += 1;
+          chartRevenue[idx] += rev;
+          chartProfit[idx] += (rev - cogs);
+        }
+      });
+
+      currentImports.forEach(imp => {
+        const idx = getSemanticBucketIndex(new Date(imp.createdAt));
+        if (idx >= 0 && idx < P_BUCKETS) chartExpense[idx] += Number(imp.totalAmount || 0);
+      });
+
+      currentExpenses.forEach(exp => {
+        const idx = getSemanticBucketIndex(new Date(exp.createdAt));
+        if (idx >= 0 && idx < P_BUCKETS) chartExpense[idx] += Number(exp.amount || 0);
+      });
 
       // ---------------------------------------------
       // 2. DATA KỲ TRƯỚC (PREVIOUS)
@@ -160,6 +217,13 @@ const dashboardController = {
         expense: {
           value: totalExpenseCurrent,
           rate: calculateRate(totalExpenseCurrent, totalExpensePrevious)
+        },
+        charts: {
+          labels: chartLabels,
+          orders: chartOrders,
+          revenue: chartRevenue,
+          profit: chartProfit,
+          expense: chartExpense
         }
       });
 

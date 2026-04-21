@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import PropTypes from 'prop-types'
+import { useNavigate } from 'react-router-dom'
 
 import {
   CRow,
@@ -29,6 +30,7 @@ const formatCurrency = (value) => {
 }
 
 const WidgetsDropdown = (props) => {
+  const navigate = useNavigate()
   const widgetChartRef1 = useRef(null)
   const widgetChartRef2 = useRef(null)
 
@@ -37,7 +39,14 @@ const WidgetsDropdown = (props) => {
     orders: { value: 0, rate: 0 },
     revenue: { value: 0, rate: 0 },
     profit: { value: 0, rate: 0 },
-    expense: { value: 0, rate: 0 }
+    expense: { value: 0, rate: 0 },
+    charts: {
+      labels: [],
+      orders: [],
+      revenue: [],
+      profit: [],
+      expense: []
+    }
   })
 
   useEffect(() => {
@@ -71,6 +80,37 @@ const WidgetsDropdown = (props) => {
       }
     })
   }, [widgetChartRef1, widgetChartRef2])
+
+  const handleExportCSV = (title, dataArray) => {
+    if (!stats.charts?.labels || stats.charts.labels.length === 0) return
+
+    let csvContent = `Báo cáo: ${title}\n`
+    csvContent += `Lọc theo: ${timeFilter === 'TODAY' ? 'Hôm nay' : timeFilter === 'WEEK' ? 'Tuần này' : 'Tháng này'}\n\n`
+    
+    // Header
+    csvContent += `Thời gian,Giá trị\n`
+    
+    let total = 0
+    stats.charts.labels.forEach((label, i) => {
+      const val = dataArray && dataArray[i] ? dataArray[i] : 0;
+      total += Number(val)
+      csvContent += `${label},${val}\n`
+    })
+
+    csvContent += `\nTỔNG CỘNG:,${total}\n`
+
+    // Encode to Blob, add BOM for UTF-8 in Excel
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    
+    link.setAttribute("href", url)
+    link.setAttribute("download", `BaoCao_${title}_${Date.now()}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   return (
     <>
@@ -110,8 +150,8 @@ const WidgetsDropdown = (props) => {
                 <DotsThree size={24} weight="bold" />
               </CDropdownToggle>
               <CDropdownMenu>
-                <CDropdownItem>Xem chi tiết</CDropdownItem>
-                <CDropdownItem>Xuất báo cáo</CDropdownItem>
+                <CDropdownItem onClick={() => navigate('/orders/list')} style={{ cursor: 'pointer' }}>Xem chi tiết</CDropdownItem>
+                <CDropdownItem onClick={() => handleExportCSV('Tong_Hoa_Don', stats.charts?.orders)} style={{ cursor: 'pointer' }}>Xuất báo cáo</CDropdownItem>
               </CDropdownMenu>
             </CDropdown>
           }
@@ -121,14 +161,14 @@ const WidgetsDropdown = (props) => {
               className="mt-3 mx-3"
               style={{ height: '70px' }}
               data={{
-                labels: ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'],
+                labels: stats.charts?.labels?.length ? stats.charts.labels : [],
                 datasets: [
                   {
                     label: 'Số đơn',
                     backgroundColor: 'transparent',
                     borderColor: 'rgba(255,255,255,.55)',
                     pointBackgroundColor: getStyle('--cui-primary'),
-                    data: [65, 59, 84, 84, 51, 55, 40],
+                    data: stats.charts?.orders?.length ? stats.charts.orders : [0, 0, 0, 0, 0, 0, 0],
                   },
                 ],
               }}
@@ -203,8 +243,8 @@ const WidgetsDropdown = (props) => {
                 <DotsThree size={24} weight="bold" />
               </CDropdownToggle>
               <CDropdownMenu>
-                <CDropdownItem>Xem chi tiết</CDropdownItem>
-                <CDropdownItem>Xuất báo cáo</CDropdownItem>
+                <CDropdownItem onClick={() => navigate('/orders/list')} style={{ cursor: 'pointer' }}>Xem chi tiết</CDropdownItem>
+                <CDropdownItem onClick={() => handleExportCSV('Tong_Doanh_Thu', stats.charts?.revenue)} style={{ cursor: 'pointer' }}>Xuất báo cáo</CDropdownItem>
               </CDropdownMenu>
             </CDropdown>
           }
@@ -214,14 +254,14 @@ const WidgetsDropdown = (props) => {
               className="mt-3 mx-3"
               style={{ height: '70px' }}
               data={{
-                labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7'],
+                labels: stats.charts?.labels?.length ? stats.charts.labels : [],
                 datasets: [
                   {
                     label: 'Doanh thu',
                     backgroundColor: 'transparent',
                     borderColor: 'rgba(255,255,255,.55)',
                     pointBackgroundColor: getStyle('--cui-info'),
-                    data: [1, 18, 9, 17, 34, 22, 11],
+                    data: stats.charts?.revenue?.length ? stats.charts.revenue : [0, 0, 0, 0, 0, 0, 0],
                   },
                 ],
               }}
@@ -295,8 +335,8 @@ const WidgetsDropdown = (props) => {
                 <DotsThree size={24} weight="bold" />
               </CDropdownToggle>
               <CDropdownMenu>
-                <CDropdownItem>Xem chi tiết</CDropdownItem>
-                <CDropdownItem>Xuất báo cáo</CDropdownItem>
+                <CDropdownItem onClick={() => navigate('/orders/list')} style={{ cursor: 'pointer' }}>Xem chi tiết</CDropdownItem>
+                <CDropdownItem onClick={() => handleExportCSV('Tong_Loi_Nhuan', stats.charts?.profit)} style={{ cursor: 'pointer' }}>Xuất báo cáo</CDropdownItem>
               </CDropdownMenu>
             </CDropdown>
           }
@@ -305,13 +345,13 @@ const WidgetsDropdown = (props) => {
               className="mt-3"
               style={{ height: '70px' }}
               data={{
-                labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7'],
+                labels: stats.charts?.labels?.length ? stats.charts.labels : [],
                 datasets: [
                   {
                     label: 'Lợi nhuận',
                     backgroundColor: 'rgba(255,255,255,.2)',
                     borderColor: 'rgba(255,255,255,.55)',
-                    data: [78, 81, 80, 45, 34, 12, 40],
+                    data: stats.charts?.profit?.length ? stats.charts.profit : [0, 0, 0, 0, 0, 0, 0],
                     fill: true,
                   },
                 ],
@@ -370,8 +410,8 @@ const WidgetsDropdown = (props) => {
                 <DotsThree size={24} weight="bold" />
               </CDropdownToggle>
               <CDropdownMenu>
-                <CDropdownItem>Xem chi tiết</CDropdownItem>
-                <CDropdownItem>Xuất báo cáo</CDropdownItem>
+                <CDropdownItem onClick={() => navigate('/cashbook')} style={{ cursor: 'pointer' }}>Xem chi tiết</CDropdownItem>
+                <CDropdownItem onClick={() => handleExportCSV('Tong_Chi', stats.charts?.expense)} style={{ cursor: 'pointer' }}>Xuất báo cáo</CDropdownItem>
               </CDropdownMenu>
             </CDropdown>
           }
@@ -380,30 +420,13 @@ const WidgetsDropdown = (props) => {
               className="mt-3 mx-3"
               style={{ height: '70px' }}
               data={{
-                labels: [
-                  'T1',
-                  'T2',
-                  'T3',
-                  'T4',
-                  'T5',
-                  'T6',
-                  'T7',
-                  'T8',
-                  'T9',
-                  'T10',
-                  'T11',
-                  'T12',
-                  'T1 năm sau',
-                  'T2 năm sau',
-                  'T3 năm sau',
-                  'T4 năm sau',
-                ],
+                labels: stats.charts?.labels?.length ? stats.charts.labels : [],
                 datasets: [
                   {
                     label: 'Chi phí',
                     backgroundColor: 'rgba(255,255,255,.2)',
                     borderColor: 'rgba(255,255,255,.55)',
-                    data: [78, 81, 80, 45, 34, 12, 40, 85, 65, 23, 12, 98, 34, 84, 67, 82],
+                    data: stats.charts?.expense?.length ? stats.charts.expense : [0, 0, 0, 0, 0, 0, 0],
                     barPercentage: 0.6,
                   },
                 ],
