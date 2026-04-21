@@ -41,7 +41,7 @@ import picture from './assets/flaticon/picture.png'
 import warning from './assets/flaticon/warning.png'
 import restock from './assets/flaticon/restock.png'
 import adjust from './assets/flaticon/adjust.png'
-
+import dashboard from './assets/flaticon/dashboard.png'
 
 // Wrappers giúp chuẩn hóa kích thước của ảnh khi chèn vào Navigation
 const makeIcon = (src) => (
@@ -57,7 +57,7 @@ const _nav = [
     name: 'Trang Chủ',
     to: '/dashboard',
     // Dùng hình ảnh Doanh Thu làm biểu tượng Dashboard
-    icon: makeIcon(imgRevenue),
+    icon: makeIcon(dashboard),
   },
   {
     component: CNavTitle,
