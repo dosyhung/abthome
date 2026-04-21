@@ -287,6 +287,82 @@ const productController = {
       console.error(error);
       res.status(500).json({ message: 'Lỗi server khi xóa sản phẩm', error: error.message });
     }
+  },
+
+  // Lấy lịch sử điều chỉnh giá
+  getPriceHistory: async (req, res) => {
+    try {
+      const history = await prisma.priceHistory.findMany({
+        include: {
+          variant: {
+             include: { product: true }
+          },
+          user: {
+             select: { fullName: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 100
+      });
+      res.status(200).json(history);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Lỗi khi lấy lịch sử giá', error: error.message });
+    }
+  },
+
+  // Điều chỉnh hàng loạt giá vốn / giá bán
+  adjustVariantPrices: async (req, res) => {
+    try {
+      const { adjustments, reason } = req.body;
+      const userId = req.user.userId;
+
+      if (!adjustments || !Array.isArray(adjustments)) {
+        return res.status(400).json({ message: 'Danh sách nhập không hợp lệ' });
+      }
+
+      await prisma.$transaction(async (tx) => {
+        for (const item of adjustments) {
+          const { variantId, importPrice, sellPrice } = item;
+          // Tìm giá cũ
+          const variantInfo = await tx.productVariant.findUnique({
+             where: { id: parseInt(variantId) }
+          });
+
+          if (!variantInfo) continue;
+
+          const oldImp = variantInfo.importPrice;
+          const oldSel = variantInfo.sellPrice;
+
+          // Cập nhật giá mới
+          await tx.productVariant.update({
+            where: { id: parseInt(variantId) },
+            data: {
+              importPrice: parseFloat(importPrice),
+              sellPrice: parseFloat(sellPrice)
+            }
+          });
+
+          // Ghi log lịch sử thay đổi
+          await tx.priceHistory.create({
+            data: {
+              variantId: parseInt(variantId),
+              userId: parseInt(userId),
+              oldImportPrice: oldImp,
+              newImportPrice: parseFloat(importPrice),
+              oldSellPrice: oldSel,
+              newSellPrice: parseFloat(sellPrice),
+              reason: reason || 'Điều chỉnh giá'
+            }
+          });
+        }
+      });
+
+      res.status(200).json({ message: 'Cập nhật giá thành công' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Lỗi khi cập nhật giá', error: error.message });
+    }
   }
 };
 

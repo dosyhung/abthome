@@ -39,6 +39,9 @@ import setting from './assets/flaticon/settings.png'
 import printer from './assets/flaticon/printer.png'
 import picture from './assets/flaticon/picture.png'
 import warning from './assets/flaticon/warning.png'
+import restock from './assets/flaticon/restock.png'
+import adjust from './assets/flaticon/adjust.png'
+
 
 // Wrappers giúp chuẩn hóa kích thước của ảnh khi chèn vào Navigation
 const makeIcon = (src) => (
@@ -94,6 +97,12 @@ const _nav = [
         to: '/products/list',
         icon: makeIcon(bestproduct),
       },
+      {
+        component: CNavItem,
+        name: 'Điều chỉnh giá vốn',
+        to: '/products/cost-adjustment',
+        icon: makeSmallIcon(adjust),
+      },
     ],
   },
   {
@@ -138,7 +147,7 @@ const _nav = [
         component: CNavItem,
         name: 'Phiếu Kiểm Kê',
         to: '/inventory/stocktakes',
-        icon: makeSmallIcon(shoppinglist),
+        icon: makeSmallIcon(restock),
       },
     ],
   },
