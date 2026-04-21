@@ -208,10 +208,23 @@ const _nav = [
     name: 'Quản Lý Nhân Sự',
   },
   {
-    component: CNavItem,
-    name: 'Quản lý Nhân Viên',
-    to: '/users',
+    component: CNavGroup,
+    name: 'Quản Lý Nhân Sự',
     icon: makeIcon(imgGroup),
+    items: [
+      {
+        component: CNavItem,
+        name: 'Hồ sơ Nhân Viên',
+        to: '/users',
+        icon: makeSmallIcon(imgGroup),
+      },
+      {
+        component: CNavItem,
+        name: 'Bảng Chấm Công',
+        to: '/users/attendance-report',
+        icon: makeSmallIcon(imgTask),
+      },
+    ]
   },
   {
     component: CNavTitle,

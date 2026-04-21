@@ -19,9 +19,10 @@ import {
   CTableHead,
   CTableHeaderCell,
   CTableRow,
-  CBadge
+  CBadge,
+  CSpinner
 } from '@coreui/react'
-import { DownloadSimple } from '@phosphor-icons/react'
+import { DownloadSimple, CheckCircle, Alarm } from '@phosphor-icons/react'
 
 import avatar1 from 'src/assets/images/avatars/1.jpg'
 import avatar2 from 'src/assets/images/avatars/2.jpg'
@@ -53,6 +54,10 @@ const Dashboard = () => {
   const [periodConversionRate, setPeriodConversionRate] = useState(0)
   const [leaderboardData, setLeaderboardData] = useState([])
   const [lowStockData, setLowStockData] = useState([])
+  
+  // Trạng thái điểm danh
+  const [attendance, setAttendance] = useState({ checkedIn: false, record: null })
+  const [checkingIn, setCheckingIn] = useState(false)
 
   useEffect(() => {
     const fetchWeeklySales = async () => {
@@ -95,11 +100,62 @@ const Dashboard = () => {
       }
     }
     fetchLowStock()
+    
+    fetchAttendanceStatus()
   }, [])
+
+  const fetchAttendanceStatus = async () => {
+    try {
+      const data = await axiosClient.get('/attendance/my-today')
+      setAttendance(data)
+    } catch (e) {
+      console.error("Lỗi lấy trạng thái điểm danh", e)
+    }
+  }
+
+  const handleCheckIn = async () => {
+    try {
+      setCheckingIn(true)
+      const res = await axiosClient.post('/attendance/check-in')
+      if (res && res.record) {
+        setAttendance({ checkedIn: true, record: res.record })
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Có lỗi xảy ra khi điểm danh')
+    } finally {
+      setCheckingIn(false)
+    }
+  }
 
 
   return (
     <>
+      <CCard className="mb-4 bg-primary text-white shadow-sm border-0 border-start border-start-4 border-start-warning">
+         <CCardBody className="d-flex justify-content-between align-items-center py-3">
+             <div>
+                <h4 className="mb-1 fw-bold">Xin chào ngày mới!</h4>
+                <div className="opacity-75 small">Hôm nay là {new Date().toLocaleDateString('vi-VN')} - Chúc bạn một ngày làm việc hiệu quả.</div>
+             </div>
+             {attendance.checkedIn ? (
+                <CButton color="success" size="lg" disabled className="text-white fw-bold px-4 border-0 opacity-100">
+                   <div className="d-flex align-items-center">
+                     <CheckCircle className="me-2" size={24} weight="fill"/> Đã Điểm Danh
+                   </div>
+                   <div className="small fw-normal mt-1 opacity-75" style={{ fontSize: '0.75rem' }}>
+                     Lúc {new Date(attendance.record?.checkInTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                   </div>
+                </CButton>
+             ) : (
+                <CButton color="warning" size="lg" onClick={handleCheckIn} disabled={checkingIn} className="fw-bold px-4 text-dark shadow-sm">
+                   <div className="d-flex align-items-center">
+                     {checkingIn ? <CSpinner size="sm" className="me-2" /> : <Alarm className="me-2 text-danger" size={24} weight="bold"/>}
+                     Bấm Chấm Công Ngay
+                   </div>
+                </CButton>
+             )}
+         </CCardBody>
+      </CCard>
+
       <WidgetsDropdown className="mb-4" />
       <CCard className="mb-4">
         <CCardBody>

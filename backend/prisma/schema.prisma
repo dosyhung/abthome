@@ -30,6 +30,7 @@ model User {
   stocktakes  Stocktake[]
   partners    Partner[]
   priceHistories PriceHistory[]
+  attendances Attendance[]
 }
 
 model Role {
@@ -319,4 +320,23 @@ model PriceHistory {
   
   reason          String?
   createdAt       DateTime @default(now())
+}
+
+// ==========================================
+// 9. BẢNG CHẤM CÔNG (ATTENDANCE)
+// ==========================================
+model Attendance {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  
+  // Lưu chỉ ngày (ví dụ "2023-10-21") để dễ group query
+  dateString  String   
+
+  checkInTime DateTime @default(now())
+  status      String   @default("PRESENT") // PRESENT, LATE, v.v..
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([userId, dateString]) // Một user chỉ có 1 bản ghi chấm công mỗi ngày
 }
