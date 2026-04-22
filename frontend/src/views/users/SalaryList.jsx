@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   CCard,
   CCardBody,
@@ -22,11 +22,16 @@ import {
   CFormLabel,
   CFormInput,
   CAvatar,
-  CSpinner
+  CSpinner,
+  CToaster,
+  CToast,
+  CToastBody,
+  CToastClose
 } from '@coreui/react';
-import { CheckCircle, PencilSimple, Wallet } from '@phosphor-icons/react';
+import { CheckCircle, PencilSimple, Wallet, WarningCircle, Eye } from '@phosphor-icons/react';
 import axiosClient, { getImageUrl } from '../../api/axiosClient';
 import { useAuth } from '../../contexts/AuthContext';
+
 
 const SalaryList = () => {
   const { user: currentUser } = useAuth();
@@ -40,6 +45,29 @@ const SalaryList = () => {
   const [year, setYear] = useState(currentDate.getFullYear());
 
   const [savingEdit, setSavingEdit] = useState(false);
+  
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [payingUserId, setPayingUserId] = useState(null);
+  const [isPaying, setIsPaying] = useState(false);
+  
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [viewingRecord, setViewingRecord] = useState(null);
+
+  const [toast, addToast] = useState(0);
+  const toaster = useRef();
+
+  const createToast = (title, message, color) => {
+    return (
+      <CToast color={color} className="text-white align-items-center">
+        <div className="d-flex">
+          <CToastBody>
+            <strong>{title}:</strong> {message}
+          </CToastBody>
+          <CToastClose className="me-2 m-auto" white />
+        </div>
+      </CToast>
+    );
+  };
 
   useEffect(() => {
     fetchSalaries();
@@ -73,24 +101,41 @@ const SalaryList = () => {
       });
       fetchSalaries();
     } catch (e) {
-      alert(e.response?.data?.message || "Lỗi cập nhật thành phần lương!");
+      addToast(createToast('Lỗi', e.response?.data?.message || "Lỗi cập nhật thành phần lương!", 'danger'));
     }
   };
 
-  const handlePay = async (userId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn thanh toán bảng lương này không? (Hành động này sẽ tạo phiếu Chi trong sổ quỹ)")) return;
+  const confirmPay = (userId) => {
+    setPayingUserId(userId);
+    setShowConfirmModal(true);
+  };
+
+  const handlePay = async () => {
+    if (!payingUserId) return;
     
     try {
+      setIsPaying(true);
       await axiosClient.post('/salary/pay', {
-        userId,
+        userId: payingUserId,
         month,
         year
       });
-      alert("Thanh toán thành công!");
+      setShowConfirmModal(false);
+      setPayingUserId(null);
+      addToast(createToast('Thành công', 'Thanh toán thành công! Đã tạo phiếu chi.', 'success'));
       fetchSalaries();
     } catch (e) {
-      alert(e.response?.data?.message || "Lỗi thanh toán lương!");
+      addToast(createToast('Lỗi', e.response?.data?.message || "Lỗi thanh toán lương!", 'danger'));
+      setShowConfirmModal(false);
+      setPayingUserId(null);
+    } finally {
+      setIsPaying(false);
     }
+  };
+
+  const openDetailModal = (record) => {
+    setViewingRecord(record);
+    setShowDetailModal(true);
   };
 
   const formatCurrency = (val) => {
@@ -103,6 +148,7 @@ const SalaryList = () => {
   };
 
   return (
+    <>
     <CRow>
       <CCol xs={12}>
         <CCard className="mb-4">
@@ -216,8 +262,13 @@ const SalaryList = () => {
                         </CTableDataCell>
                         <CTableDataCell>
                           {isAdmin && row.status === 'PENDING' && (
-                            <CButton color="success" size="sm" className="text-white" title="Thanh Toán" onClick={() => handlePay(row.userId)}>
+                            <CButton color="success" size="sm" className="text-white" title="Thanh Toán" onClick={() => confirmPay(row.userId)}>
                               <Wallet size={18} className="me-1" /> Thanh Toán
+                            </CButton>
+                          )}
+                          {row.status === 'PAID' && (
+                            <CButton color="info" size="sm" variant="outline" title="Xem Chi Tiết" onClick={() => openDetailModal(row)}>
+                              <Eye size={18} className="me-1" /> Chi Tiết
                             </CButton>
                           )}
                         </CTableDataCell>
@@ -239,6 +290,99 @@ const SalaryList = () => {
       </CCol>
 
     </CRow>
+    <CModal visible={showConfirmModal} onClose={() => setShowConfirmModal(false)} alignment="center">
+      <CModalHeader closeButton className="border-0 pb-0"></CModalHeader>
+      <CModalBody className="text-center pt-0 pb-4">
+        <WarningCircle size={80} className="text-warning mb-3" weight="fill" />
+        <h4 className="fw-bold mb-3">Xác nhận thanh toán</h4>
+        <p className="text-muted mb-0">
+          Bạn có chắc chắn muốn thanh toán bảng lương này không? 
+        </p>
+        <p className="text-muted mb-0">
+          <small>(Hành động này sẽ tự động tạo một phiếu Chi tương ứng trong Sổ Quỹ)</small>
+        </p>
+      </CModalBody>
+      <CModalFooter className="justify-content-center border-0">
+        <CButton color="secondary" variant="ghost" onClick={() => setShowConfirmModal(false)} className="px-4">Hủy</CButton>
+        <CButton color="success" className="text-white px-4 fw-bold" onClick={handlePay} disabled={isPaying}>
+          {isPaying ? <><CSpinner size="sm" className="me-2"/> Đang xử lý...</> : 'Đồng ý Thanh Toán'}
+        </CButton>
+      </CModalFooter>
+    </CModal>
+
+    {/* Modal Chi tiết lương */}
+    <CModal visible={showDetailModal} onClose={() => setShowDetailModal(false)} alignment="center" size="lg">
+      <CModalHeader closeButton className="bg-light">
+        <CModalTitle>Phiếu Lương Tháng {month}/{year}</CModalTitle>
+      </CModalHeader>
+      <CModalBody className="p-4">
+        {viewingRecord && (
+          <div>
+            <div className="d-flex align-items-center mb-4 pb-3 border-bottom">
+              <CAvatar src={viewingRecord.user?.avatar ? getImageUrl(viewingRecord.user.avatar) : '/assets/images/avatars/1.jpg'} size="xl" className="me-3" />
+              <div>
+                <h4 className="fw-bold mb-1">{viewingRecord.user?.fullName}</h4>
+                <p className="text-muted mb-0">{viewingRecord.user?.email}</p>
+              </div>
+              <div className="ms-auto text-end">
+                <CBadge color={viewingRecord.status === 'PAID' ? 'success' : 'secondary'} className="px-3 py-2 fs-6">
+                  {viewingRecord.status === 'PAID' ? 'Đã Thanh Toán' : 'Chưa Thanh Toán'}
+                </CBadge>
+                {viewingRecord.paidAt && (
+                  <div className="text-muted small mt-2">Ngày TT: {new Date(viewingRecord.paidAt).toLocaleDateString('vi-VN')}</div>
+                )}
+              </div>
+            </div>
+
+            <CRow className="mb-4">
+              <CCol md={6}>
+                <div className="bg-light p-3 rounded">
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className="text-muted">Lương cơ bản:</span>
+                    <span className="fw-semibold">{formatCurrency(viewingRecord.baseSalary)}</span>
+                  </div>
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className="text-muted">Ngày công chuẩn:</span>
+                    <span className="fw-semibold">26 ngày</span>
+                  </div>
+                  <div className="d-flex justify-content-between">
+                    <span className="text-muted">Ngày đi làm thực tế:</span>
+                    <span className="fw-semibold text-primary">{viewingRecord.presentDays} ngày {viewingRecord.lateDays > 0 ? `(${viewingRecord.lateDays} trễ)` : ''}</span>
+                  </div>
+                </div>
+              </CCol>
+              <CCol md={6}>
+                <div className="bg-light p-3 rounded">
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className="text-muted">Tổng lương theo ngày:</span>
+                    <span className="fw-semibold">{formatCurrency((viewingRecord.baseSalary / 26) * viewingRecord.presentDays)}</span>
+                  </div>
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className="text-muted">Thưởng:</span>
+                    <span className="fw-semibold text-success">+{formatCurrency(viewingRecord.bonus)}</span>
+                  </div>
+                  <div className="d-flex justify-content-between">
+                    <span className="text-muted">Phạt:</span>
+                    <span className="fw-semibold text-danger">-{formatCurrency(viewingRecord.deduction)}</span>
+                  </div>
+                </div>
+              </CCol>
+            </CRow>
+
+            <div className="bg-primary bg-opacity-10 p-3 rounded d-flex justify-content-between align-items-center border border-primary">
+              <h5 className="mb-0 text-primary fw-bold">Tổng Thực Lãnh:</h5>
+              <h3 className="mb-0 text-primary fw-bold">{formatCurrency(viewingRecord.netSalary)}</h3>
+            </div>
+          </div>
+        )}
+      </CModalBody>
+      <CModalFooter className="bg-light">
+        <CButton color="secondary" onClick={() => setShowDetailModal(false)}>Đóng</CButton>
+      </CModalFooter>
+    </CModal>
+
+    <CToaster ref={toaster} push={toast} placement="top-end" />
+    </>
   );
 };
 
