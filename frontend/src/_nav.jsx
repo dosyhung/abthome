@@ -224,6 +224,12 @@ const _nav = [
         to: '/users/attendance-report',
         icon: makeSmallIcon(imgTask),
       },
+      {
+        component: CNavItem,
+        name: 'Lương Nhân Viên',
+        to: '/users/salary',
+        icon: makeSmallIcon(imgFunding),
+      },
     ]
   },
   {

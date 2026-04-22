@@ -91,3 +91,18 @@ body {
     }
   }
 }
+
+/* Fix Avatar Image Overflow Globally */
+.avatar {
+  overflow: hidden !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: inherit;
+}

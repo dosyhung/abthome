@@ -34,7 +34,8 @@ const UserProfile = () => {
     fullName: '',
     phone: '',
     email: '',
-    roleKey: ''
+    roleKey: '',
+    baseSalary: 0
   })
   const [avatarObj, setAvatarObj] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
@@ -72,7 +73,8 @@ const UserProfile = () => {
         fullName: user.fullName || '',
         phone: user.phone || '',
         email: user.email || '',
-        roleKey: user.role?.name || ''
+        roleKey: user.role?.name || '',
+        baseSalary: user.baseSalary || 0
       })
       if (user.avatar) {
         let avatarUrl = user.avatar
@@ -279,6 +281,13 @@ const UserProfile = () => {
                         <CFormLabel>Chức vụ / Nhóm quyền</CFormLabel>
                         <CFormInput 
                           value={profileData.roleKey}
+                          disabled
+                        />
+                      </CCol>
+                      <CCol md={6}>
+                        <CFormLabel>Lương Cơ Bản</CFormLabel>
+                        <CFormInput 
+                          value={new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(profileData.baseSalary || 0)}
                           disabled
                         />
                       </CCol>

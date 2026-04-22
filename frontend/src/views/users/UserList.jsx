@@ -48,7 +48,8 @@ const UserList = () => {
     password: '',
     fullName: '',
     phone: '',
-    roleId: ''
+    roleId: '',
+    baseSalary: 0
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -123,7 +124,7 @@ const UserList = () => {
   // Khởi tạo Form
   const openModalAdd = () => {
     setFormMode('ADD')
-    setFormData({ email: '', password: '', fullName: '', phone: '', roleId: roles[0]?.id || '' })
+    setFormData({ email: '', password: '', fullName: '', phone: '', roleId: roles[0]?.id || '', baseSalary: 0 })
     setVisible(true)
   }
 
@@ -135,7 +136,8 @@ const UserList = () => {
       password: '', // Khi edit không hiện pass, nếu có nhập là cố tình update (phần Backend update pass có thể không thiết kế, nên giữ trống)
       fullName: u.fullName || '',
       phone: u.phone || '',
-      roleId: u.roleId || ''
+      roleId: u.roleId || '',
+      baseSalary: u.baseSalary || 0
     })
     setVisible(true)
   }
@@ -182,8 +184,8 @@ const UserList = () => {
         pushToast('Tạo nhân viên thành công!')
       } else {
         // Chỉ gửi những trường cho phép sửa
-        const { fullName, phone, roleId, email } = formData
-        await axiosInstance.put(`/users/${selectedUserId}`, { fullName, phone, roleId, email })
+        const { fullName, phone, roleId, email, baseSalary } = formData
+        await axiosInstance.put(`/users/${selectedUserId}`, { fullName, phone, roleId, email, baseSalary })
         pushToast('Cập nhật nhân viên thành công!')
       }
       setVisible(false)
@@ -221,6 +223,7 @@ const UserList = () => {
                   <CTableHeaderCell>Tên / Email</CTableHeaderCell>
                   <CTableHeaderCell>SĐT</CTableHeaderCell>
                   <CTableHeaderCell>Vai trò</CTableHeaderCell>
+                  <CTableHeaderCell>Lương CB</CTableHeaderCell>
                   <CTableHeaderCell>Trạng thái</CTableHeaderCell>
                   <CTableHeaderCell className="text-center">Hành động</CTableHeaderCell>
                 </CTableRow>
@@ -237,6 +240,9 @@ const UserList = () => {
                       <CBadge color="info" shape="rounded-pill">
                         {u.role?.name || `RoleID: ${u.roleId}`}
                       </CBadge>
+                    </CTableDataCell>
+                    <CTableDataCell className="fw-semibold text-success">
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(u.baseSalary || 0)}
                     </CTableDataCell>
                     <CTableDataCell>
                       <CFormSwitch
@@ -274,7 +280,7 @@ const UserList = () => {
                 ))}
                 {users.length === 0 && (
                   <CTableRow>
-                    <CTableDataCell colSpan="5" className="text-center text-muted p-4">
+                    <CTableDataCell colSpan="6" className="text-center text-muted p-4">
                       Không tìm thấy dữ liệu.
                     </CTableDataCell>
                   </CTableRow>
@@ -344,6 +350,16 @@ const UserList = () => {
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
               </CFormSelect>
+            </div>
+
+            <div className="mb-3">
+              <label className="mb-1 fw-bold">Mức Lương Cơ Bản</label>
+              <CFormInput
+                type="text"
+                value={new Intl.NumberFormat('vi-VN').format(formData.baseSalary || 0)}
+                onChange={e => setFormData({ ...formData, baseSalary: e.target.value.replace(/\D/g, '') })}
+                placeholder="Nhập mức lương (VD: 10.000.000)"
+              />
             </div>
           </CModalBody>
           <CModalFooter>

@@ -31,6 +31,8 @@ model User {
   partners    Partner[]
   priceHistories PriceHistory[]
   attendances Attendance[]
+  salaryRecords SalaryRecord[]
+  baseSalary  Decimal  @default(0) @db.Decimal(15, 2)
 }
 
 model Role {
@@ -282,6 +284,8 @@ model Payment {
   method      String   
   note        String?
   createdAt   DateTime @default(now())
+  
+  salaryRecords SalaryRecord[]
 }
 
 enum PaymentType {
@@ -339,4 +343,40 @@ model Attendance {
   createdAt   DateTime @default(now())
   
   @@unique([userId, dateString]) // Một user chỉ có 1 bản ghi chấm công mỗi ngày
+}
+
+// ==========================================
+// 10. BẢNG LƯƠNG (SALARY)
+// ==========================================
+model SalaryRecord {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  
+  month       Int
+  year        Int
+  
+  baseSalary  Decimal  @db.Decimal(15, 2)
+  presentDays Int      @default(0)
+  lateDays    Int      @default(0)
+  bonus       Decimal  @default(0) @db.Decimal(15, 2)
+  deduction   Decimal  @default(0) @db.Decimal(15, 2)
+  netSalary   Decimal  @db.Decimal(15, 2)
+  
+  status      SalaryStatus @default(PENDING)
+  paidAt      DateTime?
+  note        String?
+  
+  paymentId   Int?
+  payment     Payment? @relation(fields: [paymentId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, month, year])
+}
+
+enum SalaryStatus {
+  PENDING
+  PAID
 }

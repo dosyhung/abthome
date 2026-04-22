@@ -39,7 +39,7 @@ const userController = {
   // 2. Tạo User mới
   createUser: async (req, res) => {
     try {
-      const { email, password, fullName, phone, roleId } = req.body;
+      const { email, password, fullName, phone, roleId, baseSalary } = req.body;
 
       if (!email || !password || !fullName || !roleId) {
         return res.status(400).json({ message: 'Vui lòng điền đầy đủ các trường bắt buộc' });
@@ -69,6 +69,7 @@ const userController = {
           fullName,
           phone,
           roleId: Number(roleId),
+          baseSalary: baseSalary ? Number(baseSalary) : 0,
           isActive: true
         }
       });
@@ -85,7 +86,7 @@ const userController = {
   updateUser: async (req, res) => {
     try {
       const { id } = req.params;
-      const { fullName, phone, email, roleId, isActive } = req.body;
+      const { fullName, phone, email, roleId, isActive, baseSalary } = req.body;
 
       const userExists = await prisma.user.findUnique({ where: { id: Number(id) } });
       if (!userExists) {
@@ -113,6 +114,7 @@ const userController = {
           email: email !== undefined ? email : userExists.email,
           phone: phone !== undefined ? phone : userExists.phone,
           roleId: roleId !== undefined ? Number(roleId) : userExists.roleId,
+          baseSalary: baseSalary !== undefined ? Number(baseSalary) : userExists.baseSalary,
           isActive: isActive !== undefined ? isActive : userExists.isActive
         }
       });

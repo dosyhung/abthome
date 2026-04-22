@@ -14,6 +14,7 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const stocktakeRoutes = require('./routes/stocktakeRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
+const salaryRoutes = require('./routes/salaryRoutes');
 const path = require('path');
 
 const app = express();
@@ -42,6 +43,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/stocktakes', stocktakeRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/salary', salaryRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

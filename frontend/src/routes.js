@@ -24,6 +24,7 @@ const Typography = React.lazy(() => import('./views/theme/typography/Typography'
 const UserList = React.lazy(() => import('./views/users/UserList'))
 const UserProfile = React.lazy(() => import('./views/users/UserProfile'))
 const AttendanceReport = React.lazy(() => import('./views/users/AttendanceReport'))
+const SalaryList = React.lazy(() => import('./views/users/SalaryList'))
 
 // Base
 const Accordion = React.lazy(() => import('./views/base/accordion/Accordion'))
@@ -195,6 +196,7 @@ export const routes = [
   { path: '/cashbook', name: 'Sổ Quỹ', element: Cashbook },
   { path: '/users', name: 'Quản lý Nhân viên v2', element: UserList },
   { path: '/users/attendance-report', name: 'Bảng Chấm Công', element: AttendanceReport },
+  { path: '/users/salary', name: 'Lương Nhân Viên', element: SalaryList },
   { path: '/profile', name: 'Hồ sơ Cá nhân', element: UserProfile },
   { path: '/settings', name: 'Cấu hình Hệ thống', exact: true },
   { path: '/settings/print', name: 'Cấu Hình In Ấn', element: PrintSettings },
