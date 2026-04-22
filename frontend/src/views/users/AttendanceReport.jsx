@@ -22,7 +22,8 @@ import {
   CFormLabel,
   CFormInput,
   CPagination,
-  CPaginationItem
+  CPaginationItem,
+  CTooltip
 } from '@coreui/react';
 import { Check, Clock, X, Gear, FloppyDisk } from '@phosphor-icons/react';
 import axiosClient from '../../api/axiosClient';
@@ -111,12 +112,12 @@ const AttendanceReport = () => {
     if (!record) return null; // Chưa chấm công
     
     if (record.status === 'PRESENT') {
-      return { type: 'PRESENT', icon: <Check size={16} weight="bold" />, color: 'success' };
+      return { type: 'PRESENT', icon: <Check size={16} weight="bold" />, color: 'success', time: record.checkInTime };
     }
     if (record.status === 'LATE') {
-      return { type: 'LATE', icon: <Clock size={16} weight="bold" />, color: 'warning' };
+      return { type: 'LATE', icon: <Clock size={16} weight="bold" />, color: 'warning', time: record.checkInTime };
     }
-    return { type: record.status, icon: <Check size={16} />, color: 'secondary' };
+    return { type: record.status, icon: <Check size={16} />, color: 'secondary', time: record.checkInTime };
   };
 
   // Tính tổng
@@ -201,9 +202,14 @@ const AttendanceReport = () => {
                             return (
                               <CTableDataCell key={day} style={{ padding: '0.2rem' }}>
                                 {status ? (
-                                  <CBadge color={status.color} className="p-1 px-2" title={status.type}>
-                                    {status.icon}
-                                  </CBadge>
+                                  <CTooltip 
+                                    content={`Check-in lúc: ${new Date(status.time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
+                                    placement="top"
+                                  >
+                                    <CBadge color={status.color} className="p-1 px-2" style={{ cursor: 'pointer' }}>
+                                      {status.icon}
+                                    </CBadge>
+                                  </CTooltip>
                                 ) : pastOrToday ? (
                                   <span className="text-danger fw-bold"><X size={16} weight="bold" /></span>
                                 ) : (
