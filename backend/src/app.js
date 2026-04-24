@@ -15,12 +15,16 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const stocktakeRoutes = require('./routes/stocktakeRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const salaryRoutes = require('./routes/salaryRoutes');
+const logRoutes = require('./routes/logRoutes');
 const path = require('path');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+const auditMiddleware = require('./middlewares/auditMiddleware');
+app.use(auditMiddleware);
 
 // Public static folder cho uploads
 app.use('/public/uploads', express.static(path.join(__dirname, '../public/uploads')));
@@ -44,6 +48,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/stocktakes', stocktakeRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/salary', salaryRoutes);
+app.use('/api/logs', logRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

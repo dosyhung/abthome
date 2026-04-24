@@ -243,7 +243,8 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
   const oldDebt = currentDebt - thisOrderDebtInDB;
 
   const dynamicDiscount = Number(orderData.discount || 0);
-  const dynamicFinalAmount = Number(orderData.totalAmount || 0) - dynamicDiscount;
+  const rawTotalAmount = Number(orderData.totalAmount || 0);
+  const dynamicFinalAmount = rawTotalAmount - dynamicDiscount;
   const hasDynamicDiscount = dynamicDiscount > 0;
 
   const finalShowDiscount = isDiscountEnabledInSettings || hasDynamicDiscount;
@@ -252,7 +253,9 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
   const bankAccount = (settings.print_bank_account || '19035881724013').trim();
   const bankOwner = (settings.print_bank_owner || 'CONG TY ABT').trim();
 
-  const finalPayableAmount = Math.max(0, oldDebt + dynamicFinalAmount - Number(orderData.paidAmount || 0));
+  const paidAmount = Number(orderData.paidAmount || 0);
+  const finalPayableAmount = Math.max(0, rawTotalAmount - dynamicDiscount + oldDebt - paidAmount);
+
 
   const qrUrl = `https://img.vietqr.io/image/${bankId}-${bankAccount}-qr_only.png?amount=${finalPayableAmount}&addInfo=${orderData.code}&accountName=${encodeURIComponent(bankOwner)}`;
 
@@ -393,34 +396,34 @@ const InvoicePrintTemplate = ({ orderData, settings = {} }) => {
           )}
 
           {/* FOOTER TOTALS */}
+          <View style={styles.tableRow} wrap={false}>
+            <View style={[styles.tableCell, { width: '88%' }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>TỔNG HOÁ ĐƠN </Text></View>
+            <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>{formatCurrency(rawTotalAmount)}</Text></View>
+          </View>
           {finalShowDiscount && (
             <View style={styles.tableRow} wrap={false}>
-              <View style={[styles.tableCell, { width: '88%' }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>TỔNG TIỀN CHIẾT KHẤU </Text></View>
+              <View style={[styles.tableCell, { width: '88%' }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>CHIẾT KHẤU </Text></View>
               <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>{formatCurrency(dynamicDiscount)}</Text></View>
             </View>
           )}
-          <View style={styles.tableRow} wrap={false}>
-            <View style={[styles.tableCell, { width: '88%' }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>TỔNG HOÁ ĐƠN </Text></View>
-            <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>{formatCurrency(dynamicFinalAmount)}</Text></View>
-          </View>
           <View style={styles.tableRow} wrap={false}>
             <View style={[styles.tableCell, { width: '88%' }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>NỢ CŨ </Text></View>
             <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>{formatCurrency(oldDebt)}</Text></View>
           </View>
           <View style={styles.tableRow} wrap={false}>
             <View style={[styles.tableCell, { width: '88%' }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>THANH TOÁN </Text></View>
-            <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>{formatCurrency(orderData.paidAmount)}</Text></View>
+            <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold' }]}>{formatCurrency(paidAmount)}</Text></View>
           </View>
           <View style={[styles.tableRow, { borderBottomWidth: 0 }]} wrap={false}>
             <View style={[styles.tableCell, { width: '88%' }]}><Text style={[styles.alignRight, { fontWeight: 'bold', fontSize: 11 * scale }]}>TỔNG TIỀN PHẢI TRẢ </Text></View>
-            <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold', fontSize: 11 * scale }]}>{formatCurrency(oldDebt + dynamicFinalAmount - Number(orderData.paidAmount))}</Text></View>
+            <View style={[styles.tableCell, { width: '12%', borderRightWidth: 0 }]}><Text style={[styles.alignRight, { fontWeight: 'bold', fontSize: 11 * scale }]}>{formatCurrency(finalPayableAmount)}</Text></View>
           </View>
         </View>
 
         {/* TIỀN CHỮ */}
         <View style={[styles.dottedRow, { marginTop: 10 * scale }]} wrap={false}>
           <Text style={{ fontStyle: 'italic', fontWeight: 'bold' }}>Tổng số tiền viết bằng chữ: </Text>
-          <Text style={[styles.dottedFill, { fontStyle: 'italic', marginLeft: 5 * scale }]}>{readNumberToWords(oldDebt + dynamicFinalAmount - Number(orderData.paidAmount))}</Text>
+          <Text style={[styles.dottedFill, { fontStyle: 'italic', marginLeft: 5 * scale }]}>{readNumberToWords(finalPayableAmount)}</Text>
         </View>
 
         {/* CHỮ KÝ */}

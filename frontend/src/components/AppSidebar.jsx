@@ -20,6 +20,7 @@
  */
 
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { useAuth } from 'src/contexts/AuthContext'
 import axiosClient, { getImageUrl } from 'src/api/axiosClient'
@@ -56,6 +57,7 @@ import navigation from '../_nav'
  */
 const AppSidebar = () => {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.sidebarShow)
 
@@ -107,7 +109,10 @@ const AppSidebar = () => {
       }}
     >
       <CSidebarHeader className="border-bottom">
-        <CSidebarBrand to="/">
+        <CSidebarBrand 
+          onClick={() => navigate('/dashboard')} 
+          style={{ cursor: 'pointer' }}
+        >
           {sidebarLogo ? (
             <img src={getImageUrl(sidebarLogo)} alt="System Logo" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'cover' }} />
           ) : (

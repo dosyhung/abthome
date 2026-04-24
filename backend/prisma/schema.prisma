@@ -32,6 +32,7 @@ model User {
   priceHistories PriceHistory[]
   attendances Attendance[]
   salaryRecords SalaryRecord[]
+  activityLogs ActivityLog[]
   baseSalary  Decimal  @default(0) @db.Decimal(15, 2)
 }
 
@@ -379,4 +380,15 @@ model SalaryRecord {
 enum SalaryStatus {
   PENDING
   PAID
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  resource  String
+  details   String?  @db.Text
+  ipAddress String?
+  createdAt DateTime @default(now())
 }

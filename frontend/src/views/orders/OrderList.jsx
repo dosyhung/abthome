@@ -362,39 +362,63 @@ const OrderList = () => {
           {/* Bảng Điều Khiển Sửa Nhanh */}
           <div style={{ width: '320px', backgroundColor: '#f8f9fa', padding: '20px', borderRight: '1px solid #ddd', overflowY: 'auto' }}>
             <h5 className="mb-4 text-primary">Chỉnh Sửa Nhanh</h5>
-            <div className="mb-3">
-              <label className="form-label fw-bold">Chiết khấu (VNĐ)</label>
-              <CFormInput 
-                type="text"
-                className="text-end"
-                value={formatInputCurrency(printData?.discount)}
-                onChange={(e) => setPrintData({...printData, discount: parseInputCurrency(e.target.value)})}
-              />
-            </div>
-            <div className="mb-3">
-              <label className="form-label fw-bold">Khách đưa (Thanh toán)</label>
-              <CFormInput 
-                type="text"
-                className="text-end"
-                value={formatInputCurrency(printData?.paidAmount)}
-                onChange={(e) => setPrintData({...printData, paidAmount: parseInputCurrency(e.target.value)})}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="form-label fw-bold">Ghi chú in</label>
-              <CFormTextarea 
-                rows={4}
-                value={printData?.note || ''}
-                onChange={(e) => setPrintData({...printData, note: e.target.value})}
-              />
-            </div>
-            <CButton color="primary" size="lg" className="w-100 mb-3" onClick={handleQuickUpdateOrder}>
-              LƯU VÀO SỔ NỢ
-            </CButton>
-            <div className="text-muted small">
-              <CIcon icon={cilWarning} className="me-1" />
-              Mẹo: Các ô trên có tác dụng cập nhật chữ trực tiếp lên Hóa Đơn bên phải theo Thời Gian Thực. Bấm Lưu để chốt ghi đè vào Hệ thống CSDL.
-            </div>
+            {(() => {
+              const isLocked = printData?.status === 'COMPLETED' || printData?.status === 'DELIVERED' || printData?.status === 'CANCELLED';
+              return (
+                <>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Chiết khấu (VNĐ)</label>
+                    <CFormInput 
+                      type="text"
+                      className="text-end"
+                      disabled={isLocked}
+                      value={formatInputCurrency(printData?.discount)}
+                      onChange={(e) => setPrintData({...printData, discount: parseInputCurrency(e.target.value)})}
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Khách đưa (Thanh toán)</label>
+                    <CFormInput 
+                      type="text"
+                      className="text-end"
+                      disabled={isLocked}
+                      value={formatInputCurrency(printData?.paidAmount)}
+                      onChange={(e) => setPrintData({...printData, paidAmount: parseInputCurrency(e.target.value)})}
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="form-label fw-bold">Ghi chú in</label>
+                    <CFormTextarea 
+                      rows={4}
+                      disabled={isLocked}
+                      value={printData?.note || ''}
+                      onChange={(e) => setPrintData({...printData, note: e.target.value})}
+                    />
+                  </div>
+                  <CButton 
+                    color={isLocked ? "secondary" : "primary"} 
+                    size="lg" 
+                    className="w-100 mb-3" 
+                    disabled={isLocked}
+                    onClick={handleQuickUpdateOrder}
+                  >
+                    LƯU VÀO SỔ NỢ
+                  </CButton>
+                  
+                  {isLocked ? (
+                    <div className="text-danger small fw-bold mt-2">
+                      <CIcon icon={cilWarning} className="me-1" />
+                      Đơn hàng đã được chốt (Hoàn thành / Đã hủy). Hệ thống đã khóa chức năng chỉnh sửa tài chính để đảm bảo tính toàn vẹn công nợ!
+                    </div>
+                  ) : (
+                    <div className="text-muted small mt-2">
+                      <CIcon icon={cilWarning} className="me-1" />
+                      Mẹo: Các ô trên có tác dụng cập nhật chữ trực tiếp lên Hóa Đơn bên phải theo Thời Gian Thực. Bấm Lưu để chốt ghi đè vào Hệ thống CSDL.
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           <div style={{ flex: 1, height: '100%' }}>
