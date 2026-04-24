@@ -76,7 +76,7 @@ const orderController = {
           items: {
             include: {
               variant: {
-                include: { product: true }
+                include: { product: true, batches: true }
               },
               batch: true
             }

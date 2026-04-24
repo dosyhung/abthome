@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import axiosClient from '../../api/axiosClient'
 import {
@@ -114,21 +114,29 @@ const CreateOrder = () => {
   }, [])
 
   const checkUrlForEdit = async () => {
-    const params = new URLSearchParams(window.location.search)
-    const editId = params.get('editId')
+    // Thử lấy editId từ nhiều nguồn để đảm bảo không bị miss (do HashRouter hoặc React Router versions)
+    let editId = new URLSearchParams(location.search).get('editId')
+    if (!editId && window.location.hash.includes('?')) {
+      const hashQuery = window.location.hash.split('?')[1]
+      editId = new URLSearchParams(hashQuery).get('editId')
+    }
+
     if (editId) {
       try {
         const orderRes = await axiosClient.get(`/orders/${editId}`)
-        if (orderRes.data && orderRes.data.status === 'PENDING') {
-          populateOrderToEdit(orderRes.data)
+        // orderRes có thể là { data: order } hoặc trực tiếp là order
+        const orderData = orderRes.data ? orderRes.data : orderRes
+        
+        if (orderData && orderData.status === 'PENDING') {
+          populateOrderToEdit(orderData)
         } else {
           alert('Đơn hàng này không hợp lệ hoặc không ở trạng thái Chờ Duyệt để sửa!')
         }
       } catch (err) {
         console.error('Không tải được đơn hàng cần sửa:', err)
       }
-      // Dọn dẹp URL cho sạch sẽ
-      window.history.replaceState({}, document.title, window.location.pathname)
+      // Dọn dẹp URL cho sạch sẽ bằng cách bỏ query param
+      navigate('/orders/create', { replace: true })
     }
   }
 
