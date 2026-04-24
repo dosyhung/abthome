@@ -16,6 +16,7 @@ const stocktakeRoutes = require('./routes/stocktakeRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const salaryRoutes = require('./routes/salaryRoutes');
 const logRoutes = require('./routes/logRoutes');
+const returnRoutes = require('./routes/returnRoutes');
 const path = require('path');
 
 const app = express();
@@ -49,6 +50,7 @@ app.use('/api/stocktakes', stocktakeRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/salary', salaryRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/returns', returnRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

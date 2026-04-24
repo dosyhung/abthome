@@ -27,7 +27,11 @@ import {
   CModalTitle,
   CModalBody,
   CModalFooter,
-  CFormTextarea
+  CFormTextarea,
+  CToast,
+  CToastHeader,
+  CToastBody,
+  CToaster
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilTrash, cilSearch, cilCart, cilUser, cilWarning, cilPlus } from '@coreui/icons'
@@ -59,8 +63,10 @@ const CreateOrder = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
 
-  // --- REFS: Click Outside & ESCAPE ---
+  // --- REFS: Click Outside & ESCAPE & TOAST ---
   const searchWrapperRef = useRef(null);
+  const toaster = useRef();
+  const [toast, addToast] = useState(0);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -104,7 +110,47 @@ const CreateOrder = () => {
 
   useEffect(() => {
     fetchInitData()
+    checkUrlForEdit()
   }, [])
+
+  const checkUrlForEdit = async () => {
+    const params = new URLSearchParams(window.location.search)
+    const editId = params.get('editId')
+    if (editId) {
+      try {
+        const orderRes = await axiosClient.get(`/orders/${editId}`)
+        if (orderRes.data && orderRes.data.status === 'PENDING') {
+          populateOrderToEdit(orderRes.data)
+        } else {
+          alert('Đơn hàng này không hợp lệ hoặc không ở trạng thái Chờ Duyệt để sửa!')
+        }
+      } catch (err) {
+        console.error('Không tải được đơn hàng cần sửa:', err)
+      }
+      // Dọn dẹp URL cho sạch sẽ
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }
+
+  const populateOrderToEdit = (data) => {
+    setEditingOrderId(data.id);
+    setCustomerId(data.customerId);
+    setDiscount(data.discount);
+    setOrderNote(data.note);
+    
+    // Nếu có data.orderItems thì đó là từ API GET /orders/:id (đã format lại cho hóa đơn in),
+    // Nhưng ta cần cấu trúc của giỏ hàng gốc. Hàm getOrderById trả về `order.items` chứa variant.
+    const itemsToMap = data.items || [];
+    const mappedItems = itemsToMap.map(item => ({
+      id: Date.now() + Math.random(),
+      variant: item.variant,
+      quantity: item.quantity,
+      batchId: item.batchId || '',
+      price: item.price,
+      itemDiscount: 0 // POS mặc định
+    }));
+    setCartItems(mappedItems);
+  }
 
   const fetchInitData = async () => {
     try {
@@ -163,6 +209,9 @@ const CreateOrder = () => {
   const [discount, setDiscount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState('CASH') // CASH, BANK_TRANSFER
   const [orderNote, setOrderNote] = useState('')
+
+  // --- STATE: CẬP NHẬT ĐƠN HÀNG (SỬA GIỎ HÀNG) ---
+  const [editingOrderId, setEditingOrderId] = useState(null)
 
   // --- LOGIC: TÌM KIẾM SẢN PHẨM ---
   const handleSearch = (e) => {
@@ -240,16 +289,37 @@ const CreateOrder = () => {
   // Validate Submit
   const handleCheckout = async () => {
     if (!customerId || customerId === '') {
-      alert("Vui lòng chọn hoặc thêm Khách Hàng trước khi chốt đơn!")
+      addToast(
+        <CToast color="danger" className="text-white align-items-center">
+          <CToastHeader closeButton>
+            <strong className="me-auto">Lỗi Chốt Đơn</strong>
+          </CToastHeader>
+          <CToastBody>Vui lòng chọn hoặc thêm Khách Hàng trước khi chốt đơn!</CToastBody>
+        </CToast>
+      )
       return
     }
     if (cartItems.length === 0) {
-      alert("Giỏ hàng đang trống!")
+      addToast(
+        <CToast color="warning" className="text-white align-items-center">
+          <CToastHeader closeButton>
+            <strong className="me-auto">Cảnh Báo</strong>
+          </CToastHeader>
+          <CToastBody>Giỏ hàng đang trống! Vui lòng thêm sản phẩm.</CToastBody>
+        </CToast>
+      )
       return
     }
     const hasError = cartItems.some(i => i.quantity <= 0 || i.quantity > i.variant.stockCount)
     if (hasError) {
-      alert("Có lỗi về số lượng (vượt quá tồn kho hoặc <= 0). Vui lòng kiểm tra lại dòng đỏ!")
+      addToast(
+        <CToast color="danger" className="text-white align-items-center">
+          <CToastHeader closeButton>
+            <strong className="me-auto">Lỗi Số Lượng</strong>
+          </CToastHeader>
+          <CToastBody>Có lỗi về số lượng (vượt quá tồn kho hoặc &lt;= 0). Vui lòng kiểm tra lại dòng đỏ!</CToastBody>
+        </CToast>
+      )
       return
     }
 
@@ -274,22 +344,30 @@ const CreateOrder = () => {
     console.log("Payload gửi lên:", payload)
 
     try {
-      const response = await axiosClient.post('/orders', payload)
-      // axiosClient đã tự gỡ response.data ở interceptor
-      const newOrderId = response.data?.id
+      let response;
+      if (editingOrderId) {
+        // Mode Cập nhật
+        response = await axiosClient.put(`/orders/${editingOrderId}`, payload);
+      } else {
+        // Mode Tạo mới
+        response = await axiosClient.post('/orders', payload);
+      }
+      
+      const savedOrderId = editingOrderId || response.data?.id
 
       // Nạp thành công
       setCartItems([])
       setDiscount(0)
       setOrderNote('')
       setSearchTerm('')
+      setEditingOrderId(null) // Reset khỏi mode edit
       fetchInitData() // Kéo lại kho
       
       // Kéo data in ấn để dự phòng nếu khách ấn Nút In
-      if (newOrderId) {
+      if (savedOrderId) {
         try {
           const [orderRes, settingsRes] = await Promise.all([
-            axiosClient.get(`/orders/${newOrderId}`),
+            axiosClient.get(`/orders/${savedOrderId}`),
             axiosClient.get('/settings')
           ]);
           setPrintData({
@@ -329,13 +407,31 @@ const CreateOrder = () => {
     }
   }
 
+  // Hàm bốc ngược dữ liệu để sửa từ Modal
+  const handleEditOrder = () => {
+    if (!printData) return;
+    setShowSuccessModal(false);
+    populateOrderToEdit(printData);
+  }
+
   return (
     <CRow>
+      <CToaster ref={toaster} push={toast} placement="top-end" />
       <CCol md={12}>
         <CCard className="mb-4">
-          <CCardHeader className="bg-primary text-white d-flex align-items-center gap-2">
+          <CCardHeader className={`text-white d-flex align-items-center gap-2 ${editingOrderId ? 'bg-warning' : 'bg-primary'}`}>
             <CIcon icon={cilCart} size="lg" />
-            <strong className="fs-5">Tạo Đơn Hàng Mới</strong>
+            <strong className="fs-5">{editingOrderId ? `Đang Sửa Đơn Hàng: ${printData?.code || ''}` : 'Tạo Đơn Hàng Mới'}</strong>
+            {editingOrderId && (
+              <CButton size="sm" color="light" variant="outline" className="ms-auto" onClick={() => {
+                setEditingOrderId(null);
+                setCartItems([]);
+                setDiscount(0);
+                setOrderNote('');
+              }}>
+                Hủy Sửa
+              </CButton>
+            )}
           </CCardHeader>
           <CCardBody className="p-4">
 
@@ -557,8 +653,8 @@ const CreateOrder = () => {
                     </div>
 
                     <div className="d-grid mt-4">
-                      <CButton color="primary" size="lg" onClick={handleCheckout}>
-                        CHỐT ĐƠN HÀNG
+                      <CButton color={editingOrderId ? "warning" : "primary"} size="lg" onClick={handleCheckout}>
+                        {editingOrderId ? "CẬP NHẬT ĐƠN HÀNG" : "CHỐT ĐƠN HÀNG"}
                       </CButton>
                     </div>
                   </CCardBody>
@@ -648,6 +744,16 @@ const CreateOrder = () => {
             >
               Xem và In Hóa Đơn Ngay
             </CButton>
+            
+            <CButton 
+              color="warning" 
+              size="lg" 
+              variant="outline"
+              onClick={handleEditOrder}
+            >
+              Chỉnh sửa lại Đơn này
+            </CButton>
+
             <CButton 
               color="success" 
               size="lg" 

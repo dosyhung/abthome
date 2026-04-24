@@ -28,7 +28,7 @@ import {
   CPaginationItem
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilPlus, cilPrint, cilTrash, cilList, cilWarning } from '@coreui/icons'
+import { cilPlus, cilPrint, cilTrash, cilList, cilWarning, cilPencil } from '@coreui/icons'
 import InvoicePrintTemplate from './InvoicePrintTemplate'
 import axiosClient from '../../api/axiosClient'
 
@@ -290,6 +290,18 @@ const OrderList = () => {
                         </CBadge>
                       </CTableDataCell>
                       <CTableDataCell className="text-center text-nowrap">
+                        {order.status === 'PENDING' && (
+                          <CButton 
+                            color="warning" 
+                            variant="ghost" 
+                            size="sm" 
+                            title="Chỉnh sửa đơn hàng"
+                            className="me-2"
+                            onClick={() => navigate(`/orders/create?editId=${order.id}`)}
+                          >
+                            <CIcon icon={cilPencil} />
+                          </CButton>
+                        )}
                         <CButton 
                           color="secondary" 
                           variant="ghost" 

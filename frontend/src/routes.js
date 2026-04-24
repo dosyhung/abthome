@@ -43,6 +43,10 @@ const OrderList = React.lazy(() => import('./views/orders/OrderList'))
 const CreateOrder = React.lazy(() => import('./views/orders/CreateOrder'))
 const OrderDetail = React.lazy(() => import('./views/orders/OrderDetail'))
 
+// Returns
+const ReturnList = React.lazy(() => import('./views/returns/ReturnList'))
+const CreateReturn = React.lazy(() => import('./views/returns/CreateReturn'))
+
 // Partners
 const CustomerList = React.lazy(() => import('./views/partners/CustomerList'))
 const CustomerDebt = React.lazy(() => import('./views/partners/CustomerDebt'))
@@ -94,6 +98,11 @@ export const routes = [
   { path: '/orders/create', name: 'Tạo đơn mới (POS)', element: CreateOrder },
   { path: '/orders/detail', name: 'Chi tiết Đơn hàng', element: OrderDetail },
   { path: '/orders/detail/:id', name: 'Chi tiết ID', element: OrderDetail },
+
+  { path: '/returns', name: 'Trả hàng', exact: true },
+  { path: '/returns/list', name: 'Quản lý Phiếu trả', element: ReturnList },
+  { path: '/returns/create', name: 'Tạo phiếu trả hàng', element: CreateReturn },
+
   { path: '/partners', name: 'Đối tác', exact: true },
   { path: '/partners/customers', name: 'Quản lý Khách hàng', element: CustomerList },
   { path: '/partners/suppliers', name: 'Nhà cung cấp', element: SupplierList },

@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
   engineType = "library"
 }
 
@@ -24,22 +24,23 @@ model User {
   role      Role     @relation(fields: [roleId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  orders      Order[]
-  inventories InventoryTransaction[]
-  stocktakes  Stocktake[]
-  partners    Partner[]
+
+  orders         Order[]
+  inventories    InventoryTransaction[]
+  stocktakes     Stocktake[]
+  partners       Partner[]
   priceHistories PriceHistory[]
-  attendances Attendance[]
-  salaryRecords SalaryRecord[]
-  activityLogs ActivityLog[]
-  baseSalary  Decimal  @default(0) @db.Decimal(15, 2)
+  attendances    Attendance[]
+  salaryRecords  SalaryRecord[]
+  activityLogs   ActivityLog[]
+  baseSalary     Decimal                @default(0) @db.Decimal(15, 2)
+  ReturnOrder    ReturnOrder[]
 }
 
 model Role {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique 
-  permissions Json     // Lưu mảng quyền dạng JSON (Dành cho MySQL)
+  id          Int    @id @default(autoincrement())
+  name        String @unique
+  permissions Json // Lưu mảng quyền dạng JSON (Dành cho MySQL)
   users       User[]
 }
 
@@ -48,84 +49,87 @@ model Role {
 // ==========================================
 model Category {
   id          Int       @id @default(autoincrement())
-  name        String    
+  name        String
   description String?
   products    Product[]
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  code        String   @unique 
-  name        String   
+  id          Int              @id @default(autoincrement())
+  code        String           @unique
+  name        String
   description String?
   categoryId  Int
-  category    Category @relation(fields: [categoryId], references: [id])
+  category    Category         @relation(fields: [categoryId], references: [id])
   variants    ProductVariant[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 }
 
 model ProductVariant {
-  id            Int      @id @default(autoincrement())
-  sku           String   @unique 
-  productId     Int
-  product       Product  @relation(fields: [productId], references: [id])
-  
-  attributes    Json     
-  importPrice   Decimal  @db.Decimal(15, 2) 
-  sellPrice     Decimal  @db.Decimal(15, 2) 
-  stockCount    Int      @default(0)        
-  minStockLevel Int      @default(5) 
-  
+  id        Int     @id @default(autoincrement())
+  sku       String  @unique
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  attributes    Json
+  importPrice   Decimal @db.Decimal(15, 2)
+  sellPrice     Decimal @db.Decimal(15, 2)
+  stockCount    Int     @default(0)
+  minStockLevel Int     @default(5)
+
   orderItems       OrderItem[]
   inventoryItems   InventoryDetail[]
   batches          Batch[]
   stocktakeDetails StocktakeDetail[]
   priceHistories   PriceHistory[]
+  ReturnOrderItem  ReturnOrderItem[]
 }
 
 // ==========================================
 // 3. QUẢN LÝ LÔ HÀNG (BATCH) & DATE
 // ==========================================
 model Batch {
-  id          Int      @id @default(autoincrement())
-  batchNumber String   
-  mfgDate     DateTime? 
-  expiryDate  DateTime? 
-  
-  variantId   Int
-  variant     ProductVariant @relation(fields: [variantId], references: [id])
-  
-  initialQty  Int      
-  currentQty  Int      
+  id          Int       @id @default(autoincrement())
+  batchNumber String
+  mfgDate     DateTime?
+  expiryDate  DateTime?
+
+  variantId Int
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+
+  initialQty  Int
+  currentQty  Int
   importPrice Decimal  @db.Decimal(15, 2)
   createdAt   DateTime @default(now())
 
   inventoryDetails InventoryDetail[]
   orderItems       OrderItem[]
   stocktakeDetails StocktakeDetail[]
+  ReturnOrderItem  ReturnOrderItem[]
 
-  @@unique([batchNumber, variantId]) 
+  @@unique([batchNumber, variantId])
 }
 
 // ==========================================
 // 4. ĐỐI TÁC (KHÁCH HÀNG & NHÀ CUNG CẤP)
 // ==========================================
 model Partner {
-  id          Int      @id @default(autoincrement())
-  type        PartnerType 
+  id          Int         @id @default(autoincrement())
+  type        PartnerType
   name        String
-  phone       String   @unique
+  phone       String      @unique
   address     String?
-  taxCode     String?  
-  debtBalance Decimal  @default(0) @db.Decimal(15, 2) 
-  
+  taxCode     String?
+  debtBalance Decimal     @default(0) @db.Decimal(15, 2)
+
   orders      Order[]
   inventories InventoryTransaction[]
   payments    Payment[]
 
   assignedToId Int?
-  assignedTo   User?   @relation(fields: [assignedToId], references: [id])
+  assignedTo   User?         @relation(fields: [assignedToId], references: [id])
+  ReturnOrder  ReturnOrder[]
 }
 
 enum PartnerType {
@@ -137,131 +141,132 @@ enum PartnerType {
 // 5. GIAO DỊCH KHO (NHẬP/XUẤT & KIỂM KÊ)
 // ==========================================
 model InventoryTransaction {
-  id          Int      @id @default(autoincrement())
-  code        String   @unique 
-  type        TransactionType 
-  status      Status   @default(PENDING) 
-  userId      Int      
-  user        User     @relation(fields: [userId], references: [id])
-  partnerId   Int?     
-  partner     Partner? @relation(fields: [partnerId], references: [id])
+  id          Int             @id @default(autoincrement())
+  code        String          @unique
+  type        TransactionType
+  status      Status          @default(PENDING)
+  userId      Int
+  user        User            @relation(fields: [userId], references: [id])
+  partnerId   Int?
+  partner     Partner?        @relation(fields: [partnerId], references: [id])
   note        String?
-  totalAmount Decimal  @default(0) @db.Decimal(15, 2)
-  paidAmount  Decimal  @default(0) @db.Decimal(15, 2)
-  createdAt   DateTime @default(now())
-  
-  details     InventoryDetail[]
-  payments    Payment[]
+  totalAmount Decimal         @default(0) @db.Decimal(15, 2)
+  paidAmount  Decimal         @default(0) @db.Decimal(15, 2)
+  createdAt   DateTime        @default(now())
+
+  details  InventoryDetail[]
+  payments Payment[]
 }
 
 enum TransactionType {
-  IMPORT 
-  EXPORT 
+  IMPORT
+  EXPORT
 }
 
 model InventoryDetail {
-  id            Int      @id @default(autoincrement())
+  id            Int                  @id @default(autoincrement())
   transactionId Int
   transaction   InventoryTransaction @relation(fields: [transactionId], references: [id])
   variantId     Int
   variant       ProductVariant       @relation(fields: [variantId], references: [id])
-  
-  batchId       Int?     
-  batch         Batch?   @relation(fields: [batchId], references: [id])
-  
-  quantity      Int
-  unitPrice     Decimal  @db.Decimal(15, 2) 
+
+  batchId Int?
+  batch   Batch? @relation(fields: [batchId], references: [id])
+
+  quantity  Int
+  unitPrice Decimal @db.Decimal(15, 2)
 }
 
 model Stocktake {
-  id          Int       @id @default(autoincrement())
-  code        String    @unique 
-  userId      Int       
-  user        User      @relation(fields: [userId], references: [id])
-  status      StocktakeStatus @default(DRAFT) 
-  note        String?
-  createdAt   DateTime  @default(now())
-  
-  details     StocktakeDetail[]
+  id        Int             @id @default(autoincrement())
+  code      String          @unique
+  userId    Int
+  user      User            @relation(fields: [userId], references: [id])
+  status    StocktakeStatus @default(DRAFT)
+  note      String?
+  createdAt DateTime        @default(now())
+
+  details StocktakeDetail[]
 }
 
 model StocktakeDetail {
-  id          Int       @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   stocktakeId Int
-  stocktake   Stocktake @relation(fields: [stocktakeId], references: [id])
+  stocktake   Stocktake      @relation(fields: [stocktakeId], references: [id])
   variantId   Int
   variant     ProductVariant @relation(fields: [variantId], references: [id])
   batchId     Int?
-  batch       Batch?    @relation(fields: [batchId], references: [id])
-  
-  systemQty   Int       
-  actualQty   Int       
-  adjustment  Int       
+  batch       Batch?         @relation(fields: [batchId], references: [id])
+
+  systemQty  Int
+  actualQty  Int
+  adjustment Int
 }
 
 enum StocktakeStatus {
   DRAFT
-  ADJUSTED 
+  ADJUSTED
 }
 
 // ==========================================
 // 6. BÁN HÀNG, VẬN CHUYỂN & DÒNG TIỀN
 // ==========================================
 model Order {
-  id          Int      @id @default(autoincrement())
-  code        String   @unique 
-  customerId  Int
-  customer    Partner  @relation(fields: [customerId], references: [id])
-  userId      Int      
-  user        User     @relation(fields: [userId], references: [id])
-  
-  totalAmount Decimal  @db.Decimal(15, 2) 
-  discount    Decimal  @default(0) @db.Decimal(15, 2)
-  finalAmount Decimal  @db.Decimal(15, 2) 
-  paidAmount  Decimal  @default(0) @db.Decimal(15, 2)
+  id         Int     @id @default(autoincrement())
+  code       String  @unique
+  customerId Int
+  customer   Partner @relation(fields: [customerId], references: [id])
+  userId     Int
+  user       User    @relation(fields: [userId], references: [id])
+
+  totalAmount Decimal     @db.Decimal(15, 2)
+  discount    Decimal     @default(0) @db.Decimal(15, 2)
+  finalAmount Decimal     @db.Decimal(15, 2)
+  paidAmount  Decimal     @default(0) @db.Decimal(15, 2)
   status      OrderStatus @default(PROCESSING)
-  note        String?     
-  
-  createdAt   DateTime @default(now())
-  
+  note        String?
+
+  createdAt DateTime @default(now())
+
   items       OrderItem[]
-  payments    Payment[]   
+  payments    Payment[]
   shipping    Shipping?
+  ReturnOrder ReturnOrder[]
 }
 
 enum OrderStatus {
   PENDING
-  PROCESSING 
-  SHIPPED    
+  PROCESSING
+  SHIPPED
   DELIVERED
-  COMPLETED  
-  CANCELLED  
+  COMPLETED
+  CANCELLED
 }
 
 model OrderItem {
-  id        Int      @id @default(autoincrement())
+  id        Int            @id @default(autoincrement())
   orderId   Int
-  order     Order    @relation(fields: [orderId], references: [id])
+  order     Order          @relation(fields: [orderId], references: [id])
   variantId Int
   variant   ProductVariant @relation(fields: [variantId], references: [id])
-  
-  batchId   Int?
-  batch     Batch?   @relation(fields: [batchId], references: [id])
-  
-  quantity  Int
-  price     Decimal  @db.Decimal(15, 2) 
+
+  batchId Int?
+  batch   Batch? @relation(fields: [batchId], references: [id])
+
+  quantity Int
+  price    Decimal @db.Decimal(15, 2)
 }
 
 model Shipping {
-  id            Int      @id @default(autoincrement())
-  orderId       Int      @unique
-  order         Order    @relation(fields: [orderId], references: [id])
-  carrierName   String   
-  trackingNumber String? 
-  shippingFee   Decimal  @db.Decimal(15, 2)
-  status        ShipStatus @default(PENDING)
-  expectedDate  DateTime?
-  shippedDate   DateTime?
+  id             Int        @id @default(autoincrement())
+  orderId        Int        @unique
+  order          Order      @relation(fields: [orderId], references: [id])
+  carrierName    String
+  trackingNumber String?
+  shippingFee    Decimal    @db.Decimal(15, 2)
+  status         ShipStatus @default(PENDING)
+  expectedDate   DateTime?
+  shippedDate    DateTime?
 }
 
 enum ShipStatus {
@@ -272,26 +277,26 @@ enum ShipStatus {
 }
 
 model Payment {
-  id          Int      @id @default(autoincrement())
-  code        String   @unique 
-  type        PaymentType 
-  amount      Decimal  @db.Decimal(15, 2)
-  partnerId   Int?     
-  partner     Partner? @relation(fields: [partnerId], references: [id])
-  orderId     Int?     
-  order       Order?   @relation(fields: [orderId], references: [id])
+  id                     Int                   @id @default(autoincrement())
+  code                   String                @unique
+  type                   PaymentType
+  amount                 Decimal               @db.Decimal(15, 2)
+  partnerId              Int?
+  partner                Partner?              @relation(fields: [partnerId], references: [id])
+  orderId                Int?
+  order                  Order?                @relation(fields: [orderId], references: [id])
   inventoryTransactionId Int?
-  inventory   InventoryTransaction? @relation(fields: [inventoryTransactionId], references: [id])
-  method      String   
-  note        String?
-  createdAt   DateTime @default(now())
-  
+  inventory              InventoryTransaction? @relation(fields: [inventoryTransactionId], references: [id])
+  method                 String
+  note                   String?
+  createdAt              DateTime              @default(now())
+
   salaryRecords SalaryRecord[]
 }
 
 enum PaymentType {
-  INCOME  
-  EXPENSE 
+  INCOME
+  EXPENSE
 }
 
 enum Status {
@@ -312,37 +317,37 @@ model SystemSetting {
 // 8. LỊCH SỬ CHỈNH SỬA GIÁ (PRICE HISTORY)
 // ==========================================
 model PriceHistory {
-  id              Int      @id @default(autoincrement())
-  variantId       Int
-  variant         ProductVariant @relation(fields: [variantId], references: [id])
-  userId          Int
-  user            User           @relation(fields: [userId], references: [id])
-  
-  oldImportPrice  Decimal  @db.Decimal(15, 2)
-  newImportPrice  Decimal  @db.Decimal(15, 2)
-  oldSellPrice    Decimal  @db.Decimal(15, 2)
-  newSellPrice    Decimal  @db.Decimal(15, 2)
-  
-  reason          String?
-  createdAt       DateTime @default(now())
+  id        Int            @id @default(autoincrement())
+  variantId Int
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  userId    Int
+  user      User           @relation(fields: [userId], references: [id])
+
+  oldImportPrice Decimal @db.Decimal(15, 2)
+  newImportPrice Decimal @db.Decimal(15, 2)
+  oldSellPrice   Decimal @db.Decimal(15, 2)
+  newSellPrice   Decimal @db.Decimal(15, 2)
+
+  reason    String?
+  createdAt DateTime @default(now())
 }
 
 // ==========================================
 // 9. BẢNG CHẤM CÔNG (ATTENDANCE)
 // ==========================================
 model Attendance {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
   // Lưu chỉ ngày (ví dụ "2023-10-21") để dễ group query
-  dateString  String   
+  dateString String
 
   checkInTime DateTime @default(now())
   status      String   @default("PRESENT") // PRESENT, LATE, v.v..
-  
-  createdAt   DateTime @default(now())
-  
+
+  createdAt DateTime @default(now())
+
   @@unique([userId, dateString]) // Một user chỉ có 1 bản ghi chấm công mỗi ngày
 }
 
@@ -350,30 +355,30 @@ model Attendance {
 // 10. BẢNG LƯƠNG (SALARY)
 // ==========================================
 model SalaryRecord {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  
-  month       Int
-  year        Int
-  
-  baseSalary  Decimal  @db.Decimal(15, 2)
-  presentDays Int      @default(0)
-  lateDays    Int      @default(0)
-  bonus       Decimal  @default(0) @db.Decimal(15, 2)
-  deduction   Decimal  @default(0) @db.Decimal(15, 2)
-  netSalary   Decimal  @db.Decimal(15, 2)
-  
-  status      SalaryStatus @default(PENDING)
-  paidAt      DateTime?
-  note        String?
-  
-  paymentId   Int?
-  payment     Payment? @relation(fields: [paymentId], references: [id])
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  month Int
+  year  Int
+
+  baseSalary  Decimal @db.Decimal(15, 2)
+  presentDays Int     @default(0)
+  lateDays    Int     @default(0)
+  bonus       Decimal @default(0) @db.Decimal(15, 2)
+  deduction   Decimal @default(0) @db.Decimal(15, 2)
+  netSalary   Decimal @db.Decimal(15, 2)
+
+  status SalaryStatus @default(PENDING)
+  paidAt DateTime?
+  note   String?
+
+  paymentId Int?
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([userId, month, year])
 }
 
@@ -391,4 +396,42 @@ model ActivityLog {
   details   String?  @db.Text
   ipAddress String?
   createdAt DateTime @default(now())
+}
+
+// ==========================================
+// 10. HOA DON TRA HANG (SALES RETURN)
+// ==========================================
+model ReturnOrder {
+  id         Int     @id @default(autoincrement())
+  code       String  @unique
+  orderId    Int
+  order      Order   @relation(fields: [orderId], references: [id])
+  customerId Int
+  customer   Partner @relation(fields: [customerId], references: [id])
+  userId     Int
+  user       User    @relation(fields: [userId], references: [id])
+
+  totalRefundAmount Decimal     @db.Decimal(15, 2)
+  refundFee         Decimal     @default(0) @db.Decimal(15, 2)
+  finalRefundAmount Decimal     @db.Decimal(15, 2)
+  paidAmount        Decimal     @default(0) @db.Decimal(15, 2)
+  status            OrderStatus @default(PENDING)
+  note              String?
+
+  createdAt DateTime @default(now())
+
+  items ReturnOrderItem[]
+}
+
+model ReturnOrderItem {
+  id            Int            @id @default(autoincrement())
+  returnOrderId Int
+  returnOrder   ReturnOrder    @relation(fields: [returnOrderId], references: [id], onDelete: Cascade)
+  variantId     Int
+  variant       ProductVariant @relation(fields: [variantId], references: [id])
+  batchId       Int?
+  batch         Batch?         @relation(fields: [batchId], references: [id])
+
+  quantity    Int
+  refundPrice Decimal @db.Decimal(15, 2)
 }

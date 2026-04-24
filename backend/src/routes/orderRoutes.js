@@ -7,6 +7,7 @@ router.use(verifyToken);
 router.get('/', orderController.getAllOrders);
 router.get('/:id', orderController.getOrderById);
 router.post('/', orderController.createOrder);
+router.put('/:id', orderController.updateOrder);
 router.patch('/:id/approve', orderController.approveOrder);
 router.patch('/:id/quick-update', orderController.quickUpdateOrder);
 

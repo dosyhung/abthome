@@ -8,8 +8,20 @@ const orderController = {
       const limit = parseInt(req.query.limit) || 11;
       const skip = (page - 1) * limit;
       const timeFilter = req.query.timeFilter || 'ALL';
+      const customerId = req.query.customerId;
+      const statusStr = req.query.status;
 
       let whereClause = {};
+      
+      if (customerId) {
+        whereClause.customerId = Number(customerId);
+      }
+      
+      if (statusStr) {
+        // Có thể truyền kiểu status=COMPLETED,DELIVERED
+        whereClause.status = { in: statusStr.split(',') };
+      }
+
       const now = new Date();
       if (timeFilter === 'TODAY') {
         const startOfDay = new Date(now.setHours(0, 0, 0, 0));
@@ -237,6 +249,161 @@ const orderController = {
     } catch (error) {
       console.error("Lỗi khi tạo đơn POS:", error);
       res.status(500).json({ message: 'Lỗi server bảo mật khi giao dịch chốt đơn', error: error.message });
+    }
+  },
+
+  // API Cập nhật toàn bộ Đơn Hàng (Sửa Giỏ Hàng)
+  updateOrder: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { customerId, items, discount = 0, paidAmount = 0, paymentMethod = 'CASH', note = '' } = req.body;
+      const userId = req.user.userId; // Trích từ JWT middleware
+
+      if (!customerId || !items || items.length === 0) {
+        return res.status(400).json({ message: 'Khách hàng và Giỏ hàng không được để trống' });
+      }
+
+      // 1. Kiểm tra đơn hàng có tồn tại và đang ở trạng thái PENDING không
+      const existingOrder = await prisma.order.findUnique({
+        where: { id: Number(id) },
+        include: { items: true }
+      });
+
+      if (!existingOrder) {
+        return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+      }
+
+      if (existingOrder.status !== 'PENDING') {
+        return res.status(400).json({ message: 'Không thể chỉnh sửa giỏ hàng vì Đơn hàng không ở trạng thái Chờ duyệt!' });
+      }
+
+      // 2. Xác thực tồn kho (Tương tự Create)
+      const variantIds = items.map(item => item.variantId);
+      const variantsInDb = await prisma.productVariant.findMany({
+        where: { id: { in: variantIds } }
+      });
+
+      let totalAmount = 0;
+      for (const item of items) {
+        const matchingVariant = variantsInDb.find(v => v.id === item.variantId);
+        if (!matchingVariant) return res.status(400).json({ message: `Mã sản phẩm ${item.variantId} không hợp lệ` });
+        if (matchingVariant.stockCount < item.quantity) {
+          return res.status(400).json({ message: `Sản phẩm SKU: ${matchingVariant.sku} không đủ tồn kho! (Tồn: ${matchingVariant.stockCount})` });
+        }
+        totalAmount += Number(item.price) * Number(item.quantity);
+      }
+
+      const finalAmount = totalAmount - discount;
+      const amountToPay = Number(paidAmount);
+      
+      // 3. Tính toán công nợ chênh lệch
+      const oldDebtAddition = Number(existingOrder.finalAmount) - Number(existingOrder.paidAmount);
+      const newDebtAddition = finalAmount - amountToPay;
+      const debtAdjustment = newDebtAddition - oldDebtAddition;
+
+      // 4. Bắt đầu Transaction
+      const result = await prisma.$transaction(async (tx) => {
+        
+        // 4.1 Xóa toàn bộ chi tiết cũ
+        await tx.orderItem.deleteMany({
+          where: { orderId: Number(id) }
+        });
+
+        // 4.2 Cập nhật thông tin Order và tạo chi tiết mới
+        const updatedOrder = await tx.order.update({
+          where: { id: Number(id) },
+          data: {
+            customerId: Number(customerId),
+            totalAmount,
+            discount,
+            finalAmount,
+            paidAmount: amountToPay,
+            note: note,
+            items: {
+              create: items.map(i => ({
+                variantId: Number(i.variantId),
+                batchId: i.batchId ? Number(i.batchId) : null,
+                quantity: Number(i.quantity),
+                price: Number(i.price)
+              }))
+            }
+          },
+          include: {
+            customer: true,
+            user: true,
+            items: {
+              include: {
+                variant: {
+                  include: { product: true }
+                }
+              }
+            }
+          }
+        });
+
+        // 4.3 Cập nhật công nợ nếu có chênh lệch
+        // (Nếu đổi khách hàng thì phải trừ nợ khách cũ cộng nợ khách mới, nhưng vì ít xảy ra nên tạm thời chỉ áp dụng nếu cùng khách hàng)
+        if (existingOrder.customerId !== Number(customerId)) {
+           // Khách cũ: Giảm nợ
+           await tx.partner.update({
+             where: { id: existingOrder.customerId },
+             data: { debtBalance: { decrement: oldDebtAddition } }
+           });
+           // Khách mới: Tăng nợ
+           await tx.partner.update({
+             where: { id: Number(customerId) },
+             data: { debtBalance: { increment: newDebtAddition } }
+           });
+        } else if (debtAdjustment !== 0) {
+          await tx.partner.update({
+            where: { id: Number(customerId) },
+            data: {
+              debtBalance: {
+                increment: debtAdjustment
+              }
+            }
+          });
+        }
+
+        // 4.4 Cập nhật phiếu thu Sổ Quỹ
+        if (amountToPay > 0) {
+          const oldPayment = await tx.payment.findFirst({
+            where: { orderId: Number(id) }
+          });
+          
+          if (oldPayment) {
+             await tx.payment.update({
+               where: { id: oldPayment.id },
+               data: { amount: amountToPay, method: paymentMethod }
+             });
+          } else {
+             const paymentCode = 'REC' + Date.now().toString().slice(-6);
+             await tx.payment.create({
+                data: {
+                  code: paymentCode,
+                  type: 'INCOME',
+                  amount: amountToPay,
+                  partnerId: Number(customerId),
+                  orderId: Number(id),
+                  method: paymentMethod,
+                  note: `Thanh toán cho đơn bán hàng ${updatedOrder.code}`
+                }
+             });
+          }
+        } else {
+          // Xóa phiếu thu nếu amount = 0
+          await tx.payment.deleteMany({
+             where: { orderId: Number(id) }
+          });
+        }
+
+        return updatedOrder;
+      });
+
+      res.status(200).json({ message: 'Cập nhật đơn hàng thành công!', data: result });
+    } catch (error) {
+      console.error("Lỗi khi cập nhật đơn POS:", error);
+      res.status(500).json({ message: 'Lỗi server bảo mật khi giao dịch cập nhật đơn', error: error.message });
     }
   },
 
