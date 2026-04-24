@@ -149,7 +149,7 @@ const OrderCreate = () => {
                 <CButton color="primary" variant="outline">Tìm kiếm</CButton>
               </CInputGroup>
             </CCardHeader>
-            <CCardBody style={{ height: '70vh', overflowY: 'auto', backgroundColor: '#f8f9fa' }}>
+            <CCardBody className="pos-product-list" style={{ overflowY: 'auto', backgroundColor: '#f8f9fa' }}>
               {loading ? (
                 <div className="text-center py-5"><CSpinner color="primary"/></div>
               ) : (
@@ -181,13 +181,13 @@ const OrderCreate = () => {
 
         {/* KHU VỰC GIỎ HÀNG PHẢI */}
         <CCol md={5}>
-          <CCard className="mb-4 shadow-sm border-top-success h-100 flex-column d-flex">
+          <CCard className="mb-4 shadow-sm border-top-success pos-cart-container flex-column d-flex">
             <CCardHeader className="bg-white fw-bold d-flex align-items-center">
               <CIcon icon={cilCart} className="me-2 text-success" size="lg" /> 
               Giỏ Hàng POS
             </CCardHeader>
-            <CCardBody className="flex-grow-1" style={{ overflowY: 'auto' }}>
-              <CTable hover align="middle" borderless className="mb-0">
+            <CCardBody className="flex-grow-1" style={{ overflowY: 'auto', padding: '0.5rem' }}>
+              <CTable hover align="middle" borderless className="mb-0 table-mobile-cards">
                 <CTableHead color="light">
                   <CTableRow>
                     <CTableHeaderCell>Tên hàng</CTableHeaderCell>
@@ -199,23 +199,24 @@ const OrderCreate = () => {
                 <CTableBody>
                   {cart.map(item => (
                     <CTableRow key={item.id}>
-                      <CTableDataCell>
-                        <div className="fw-bold" style={{ fontSize: '0.85rem' }}>{item.product.name}</div>
+                      <CTableDataCell data-label="Tên hàng">
+                        <div className="fw-bold text-wrap" style={{ fontSize: '0.85rem' }}>{item.product.name}</div>
                         <div className="small text-muted">{formatCurrency(item.sellPrice)}</div>
                       </CTableDataCell>
-                      <CTableDataCell>
+                      <CTableDataCell data-label="Số lượng">
                         <CFormInput 
                           type="number" 
                           size="sm" 
                           value={item.quantity} 
                           min="1"
+                          style={{ maxWidth: '80px', marginLeft: 'auto' }}
                           onChange={e => updateCartQty(item.id, Number(e.target.value), item.stockCount)}
                         />
                       </CTableDataCell>
-                      <CTableDataCell className="text-end fw-bold text-danger" style={{ fontSize: '0.9rem' }}>
+                      <CTableDataCell className="text-end fw-bold text-danger" data-label="Thành tiền" style={{ fontSize: '0.9rem' }}>
                         {formatCurrency(item.quantity * item.sellPrice)}
                       </CTableDataCell>
-                      <CTableDataCell className="text-end">
+                      <CTableDataCell className="text-end" data-label="Xóa">
                         <CButton color="danger" variant="ghost" size="sm" onClick={() => removeCartItem(item.id)}>
                           <CIcon icon={cilTrash} />
                         </CButton>

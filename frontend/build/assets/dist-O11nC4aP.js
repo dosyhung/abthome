@@ -1,0 +1,1 @@
+import{h as e}from"./props-CJOlaHXP.js";var t,n=e((()=>{t=globalThis||self}));export{n,t};

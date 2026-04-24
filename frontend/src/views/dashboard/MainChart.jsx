@@ -52,10 +52,10 @@ const MainChart = ({ timeFilter = 'Month' }) => {
   const random = (min = 0, max = 100) => Math.floor(Math.random() * (max - min + 1)) + min
 
   return (
-    <>
+    <div style={{ position: 'relative', width: '100%', height: '300px', marginTop: '40px' }}>
       <CChartLine
         ref={chartRef}
-        style={{ height: '300px', marginTop: '40px' }}
+        style={{ height: '100%', width: '100%' }}
         data={{
           labels: chartData.labels,
           datasets: [
@@ -183,7 +183,7 @@ const MainChart = ({ timeFilter = 'Month' }) => {
           },
         }}
       />
-    </>
+    </div>
   )
 }
 

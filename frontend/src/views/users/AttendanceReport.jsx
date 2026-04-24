@@ -170,7 +170,7 @@ const AttendanceReport = () => {
 
             {loading ? <div className="text-center my-5">Đang tải biểu mẫu...</div> : (
               <div className="table-responsive">
-                <CTable bordered align="middle" className="text-center text-nowrap" hover small>
+                <CTable bordered align="middle" className="text-center text-nowrap table-frozen-column" hover small>
                   <CTableHead color="light">
                     <CTableRow>
                       <CTableHeaderCell rowSpan={2} className="align-middle text-start" style={{ minWidth: '200px' }}>Nhân Viên</CTableHeaderCell>

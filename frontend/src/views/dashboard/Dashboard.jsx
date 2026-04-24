@@ -312,7 +312,7 @@ const Dashboard = () => {
                   </div>
                   
                   <div className="table-responsive">
-                    <CTable align="middle" className="mb-0 border text-nowrap" hover small bordered>
+                    <CTable align="middle" className="mb-0 border text-nowrap table-mobile-cards" hover small bordered>
                       <CTableHead>
                         <CTableRow>
                           <CTableHeaderCell className="bg-body-tertiary">Sản phẩm</CTableHeaderCell>
@@ -322,13 +322,13 @@ const Dashboard = () => {
                       <CTableBody>
                         {lowStockData && lowStockData.length > 0 ? lowStockData.map((item) => (
                           <CTableRow key={item.id}>
-                            <CTableDataCell>
+                            <CTableDataCell data-label="Sản phẩm">
                               <div className="fw-semibold text-truncate text-wrap" style={{ maxWidth: '300px', whiteSpace: 'normal' }}>
                                 {item.productName}
                               </div>
                               <div className="small text-body-secondary fw-bold mt-1">Mã: {item.sku}</div>
                             </CTableDataCell>
-                            <CTableDataCell className="text-center">
+                            <CTableDataCell className="text-center" data-label="Tồn kho">
                               <CBadge color="danger" className="p-2 fs-6 rounded-pill">
                                 {item.stockCount}
                               </CBadge>
@@ -350,7 +350,7 @@ const Dashboard = () => {
               <br />
 
               <div className="fs-5 fw-semibold mb-4 text-center">Bảng Vinh Danh Nhân Viên Bán Hàng (Tháng này)</div>
-              <CTable align="middle" className="mb-0 border text-nowrap" hover responsive>
+              <CTable align="middle" className="mb-0 border table-mobile-cards" hover responsive>
                 <CTableHead>
                   <CTableRow>
                     <CTableHeaderCell className="bg-body-tertiary text-center w-25">Xếp hạng</CTableHeaderCell>
@@ -382,26 +382,26 @@ const Dashboard = () => {
 
                     return (
                       <CTableRow key={item.id}>
-                        <CTableDataCell className="text-center">
+                        <CTableDataCell className="text-center" data-label="Xếp hạng">
                           <span className={`fs-5 fw-bold ${rank <= 3 ? 'text-warning' : 'text-body-secondary'}`}>
                             {rankDisplay}
                           </span>
                         </CTableDataCell>
-                        <CTableDataCell>
+                        <CTableDataCell data-label="Nhân viên">
                           <div className="d-flex align-items-center">
                             <CAvatar size="md" src={avatarUrl} className="me-3" />
                             <div className="fw-semibold">{item.name}</div>
                           </div>
                         </CTableDataCell>
-                        <CTableDataCell className="text-center">
+                        <CTableDataCell className="text-center" data-label="Số đơn bán ra">
                           <span className="fw-bold">{item.orderCount} Đơn</span>
                         </CTableDataCell>
-                        <CTableDataCell className="text-end">
+                        <CTableDataCell className="text-end" data-label="Tổng doanh thu">
                           <span className="fs-6 fw-bold text-success pe-3">
                             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(item.totalRevenue)}
                           </span>
                         </CTableDataCell>
-                        <CTableDataCell className="text-center">
+                        <CTableDataCell className="text-center" data-label="Xếp loại">
                           <CBadge color={badgeColor} shape="rounded-pill" className="px-3 py-2">
                             {badgeLabel}
                           </CBadge>

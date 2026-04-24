@@ -16,6 +16,7 @@
 
 body {
   background-color: var(--cui-tertiary-bg);
+  overflow-x: hidden;
 }
 
 .wrapper {
@@ -105,4 +106,127 @@ body {
   height: 100% !important;
   object-fit: cover !important;
   border-radius: inherit;
+}
+
+/* =========================================================================
+   MOBILE RESPONSIVE UTILITIES 
+   ========================================================================= */
+
+/* Biến Data Tables thành dạng Cards trên mobile (< 768px) */
+@media (max-width: 767.98px) {
+  .table-mobile-cards {
+    thead {
+      display: none !important;
+    }
+    tbody, tr, td {
+      display: block;
+      width: 100%;
+    }
+    tr {
+      margin-bottom: 1rem;
+      border: 1px solid var(--cui-border-color-translucent, rgba(0,0,0,0.1));
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      background-color: var(--cui-body-bg);
+      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-align: right;
+      padding: 0.5rem 0 !important;
+      border: none !important;
+      border-bottom: 1px solid var(--cui-border-color-translucent, rgba(0,0,0,0.05)) !important;
+      
+      &:last-child {
+        border-bottom: none !important;
+      }
+
+      &::before {
+        content: attr(data-label);
+        font-weight: 600;
+        text-align: left;
+        color: var(--cui-secondary-color);
+        padding-right: 1rem;
+      }
+      
+      /* Cân chỉnh nội dung trong thẻ div bên trong td (nếu có) */
+      > div, > span {
+        text-align: right;
+      }
+    }
+  }
+
+  /* Responsive POS Cart Height */
+  .pos-cart-container {
+    height: auto !important;
+    max-height: 50vh;
+  }
+  .pos-product-list {
+    height: auto !important;
+    max-height: 60vh;
+  }
+}
+
+/* Giữ chiều cao cố định cho màn hình to */
+@media (min-width: 768px) {
+  .pos-cart-container {
+    height: 100% !important;
+  }
+  .pos-product-list {
+    height: 70vh !important;
+  }
+}
+
+/* Đóng băng cột đầu và cuối cho bảng rộng ngang (Chấm công) */
+.table-frozen-column {
+  th:first-child,
+  td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: inherit;
+    box-shadow: inset -2px 0 5px -2px rgba(0,0,0,0.1);
+  }
+  
+  th:last-child,
+  td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background-color: inherit;
+    box-shadow: inset 2px 0 5px -2px rgba(0,0,0,0.1);
+  }
+
+  /* Đảm bảo table header cũng có bg color ko bị trong suốt */
+  thead th {
+    background-color: var(--cui-table-bg, #f8f9fa);
+  }
+  tbody td {
+    background-color: var(--cui-body-bg, #fff);
+  }
+  
+  /* Nếu là dark mode */
+  @include color-mode(dark) {
+    thead th {
+      background-color: var(--cui-dark-bg-subtle);
+    }
+    tbody td {
+      background-color: var(--cui-body-bg);
+    }
+  }
+}
+
+/* Giao diện Cuộn tự nhiên nhưng ẩn thanh cuộn (Native Scroll without visible scrollbar) */
+.custom-native-scroll {
+  overflow-y: auto;
+  padding-bottom: 5rem !important; /* Không bị che khuất menu cuối trên mobile */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.custom-native-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+  width: 0;
 }
